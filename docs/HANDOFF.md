@@ -338,3 +338,14 @@ The current 12-category template remains visible for consistency. A category may
 At the end, Shandon selects the top 2–3 development priorities and one short-term goal. These seed the athlete's initial development focus. The purpose of the baseline is to leave with an actionable first plan, not merely a set of ratings.
 
 The Prisma model now allows nullable category ratings, quick observation tags, baseline priority snapshots, and a short-term-goal snapshot. The interactive prototype is at /trainer/evaluation/new. Persistence is still pending database migration/server actions.
+
+
+## Reevaluation prototype — pending Shandon approval
+
+A proposed reevaluation flow now exists at /trainer/evaluation/reevaluate.
+
+It preserves the prior evaluation and creates a new evaluation rather than editing history. For each category, the trainer sees the previous rating, meaningful evidence logged since the previous evaluation, the new rating controls, and an optional explanation for why the rating changed or stayed the same.
+
+The final step updates the active 2–3 development priorities and short-term goal separately from the historical evaluation record.
+
+This flow is implemented as a prototype but is not yet marked validated. Shandon should review whether this is how he wants reevaluations to work before the first production database migration is finalized.
