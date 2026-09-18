@@ -40,11 +40,11 @@ Do not silently increase authority because a connected credential or tool allows
 
 ## Current project stage
 
-The repository is in product/domain-definition stage.
+The repository is moving from product/domain-definition into MVP implementation.
 
-There is no committed implementation stack yet and no application code. Do not bootstrap a framework simply because one is familiar or fashionable.
+The application stack is now explicitly selected: Next.js + TypeScript + Prisma + PostgreSQL, deployed to Google Cloud Run with Cloud SQL. A minimal infrastructure health app may exist while the real application foundation is bootstrapped.
 
-Before implementation, complete the remaining Phase 0 decisions in the README and validate the core domain/UX model with Shandon.
+Use README.md as the active MVP roadmap and completion checklist. Continue from the first eligible incomplete roadmap item unless Shandon explicitly reprioritizes. Product/UX decisions that remain open must still be validated with Shandon rather than invented.
 
 ## Product-owner interaction rule
 
