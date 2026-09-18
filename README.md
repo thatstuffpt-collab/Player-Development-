@@ -187,7 +187,7 @@ Checkboxes may only be marked complete when the result is implemented and verifi
 - [x] Configure GitHub Workload Identity Federation
 - [x] Verify GitHub Actions can authenticate to Google Cloud
 - [x] Add automated container build/deploy workflow
-- [ ] Verify first automated Cloud Run deployment is fully successful
+- [x] Verify first automated Cloud Run deployment is fully successful
 - [ ] Validate trainer normal-session UX
 - [ ] Validate new-client/baseline-evaluation UX
 - [ ] Validate reevaluation UX
@@ -197,14 +197,14 @@ Checkboxes may only be marked complete when the result is implemented and verifi
 
 ### Phase 1 — Real application foundation
 
-- [ ] Replace temporary Python health app with Next.js + TypeScript
-- [ ] Add Prisma
+- [x] Replace temporary Python health app with Next.js + TypeScript
+- [x] Add Prisma
 - [ ] Connect Prisma securely to Cloud SQL
 - [ ] Create initial database schema and migrations
-- [ ] Add local development configuration with no committed secrets
+- [x] Add local development configuration with no committed secrets
 - [ ] Add automated tests and CI checks
-- [ ] Add production health/readiness endpoint
-- [ ] Verify Next.js application deploys successfully to Cloud Run
+- [x] Add production health/readiness endpoint
+- [x] Verify Next.js application deploys successfully to Cloud Run
 
 ### Phase 2 — Trainer core workflow
 
@@ -289,7 +289,7 @@ Every meaningful engineering session must:
 
 ## Next action
 
-Verify the first automated Cloud Run deployment. If successful, begin the Phase 0 trainer workflow walkthrough, starting with the normal training-day experience and the fastest way Shandon wants to record one meaningful result.
+Validate the trainer normal-session UX with Shandon: define what he needs to see when opening a player during a session, what qualifies as a meaningful result worth saving, and the fastest acceptable interaction for recording it. Then use that decision to finalize the first trainer workflow and database migration.
 
 ## Product behavior and invariants
 
