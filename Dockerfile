@@ -1,11 +1,32 @@
-FROM python:3.12-slim
-
+FROM node:24-slim AS deps
 WORKDIR /app
-COPY app.py /app/app.py
+COPY package.json ./
+COPY prisma ./prisma
+COPY prisma.config.ts ./
+RUN npm install
 
-ENV PYTHONUNBUFFERED=1
+FROM node:24-slim AS builder
+WORKDIR /app
+ENV NEXT_TELEMETRY_DISABLED=1
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+RUN npm run build
+
+FROM node:24-slim AS runner
+WORKDIR /app
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=8080
+ENV HOSTNAME=0.0.0.0
 
+RUN groupadd --system --gid 1001 nodejs && \
+    useradd --system --uid 1001 --gid nodejs nextjs
+
+COPY --from=builder /app/public ./public
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+
+USER nextjs
 EXPOSE 8080
 
-CMD ["python", "app.py"]
+CMD ["node", "server.js"]
