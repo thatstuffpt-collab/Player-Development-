@@ -157,280 +157,141 @@ player goal
 -> approved recruiting/player profile
 The system should make progress understandable without turning normal training into constant data entry.
 
-## What has NOT been decided
+## Current engineering state — 2026-09-18
 
-Do not invent these as settled facts:
-
-whether the first UX is desktop-first, phone-first, or balanced responsive web;
-exact parent invitation/account recovery flow;
-whether coach/recruiter links are public, secret-token, expiring, or authenticated;
-exact youth/foundation evaluation templates beyond the documented example;
-exact advanced/college/pro templates;
-complete drill library;
-exact numeric benchmark thresholds;
-video hosting/storage provider;
-whether parents may edit any player information or are read-only;
-whether players eventually receive their own login;
-branding/design system;
-whether PDFs/reports are required in addition to live profiles;
-legal/privacy/consent policy for minor profiles/media;
-production deployment architecture.
-
-## Recommended continuation
-
-Start with the remaining Phase 0 decisions in README.
-
-A good first question to Shandon is:
-
- When you're actually using this during your week, where do you picture yourself opening it most—your phone in the gym, a laptop after training, or both? And when you need to record one meaningful result, what is the fastest interaction you would want?
-
-Do not spend multiple sessions choosing infrastructure before validating the trainer workflow.
-
-After the primary UX is understood:
-1. map the trainer screens;
-2. map parent screens;
-3. map coach/recruiter profile;
-4. model authorization;
-5. validate domain entities/relationships;
-6. choose stack;
-7. bootstrap code/tests/CI.
-
-## Suggested first UX walkthrough
-
-Ask Shandon to walk through these scenarios one at a time:
-
-1. **New ongoing client**
-   - create player;
-   - connect parent;
-   - record goals;
-   - baseline evaluation;
-   - decide initial development focus.
-
-2. **Normal training day**
-   - open player;
-   - see previous focus/next-session plan;
-   - train;
-   - record one important benchmark/progression event;
-   - update next-session plan.
-
-3. **Reevaluation**
-   - see evidence since previous evaluation;
-   - rate each applicable criterion;
-   - explain progress/current focus;
-   - establish next development plan.
-
-4. **Parent**
-   - login;
-   - view current progress/history/goals/achievements;
-   - understand what is improving and what is next;
-   - never access trainer-private material.
-
-5. **College coach/recruiter**
-   - receive profile;
-   - rapidly understand player identity, current development, achievements/stats, video, and relevant contact info.
-
-6. **Camp**
-   - create/select camp;
-   - intake participants;
-   - rapidly evaluate many players;
-   - distribute/retain results;
-   - preserve player if they become an ongoing client.
-
-## Engineering guidance for the next ChatGPT
-
-Do not confuse "AI-assisted development" with "the application needs AI."
-
-This application's known core workflows are currently deterministic CRUD/workflow/reporting/authorization problems. Build those well first.
-
-If an AI feature is later proposed, state:
-what user problem it solves;
-what inputs it receives;
-what output it produces;
-why deterministic logic is insufficient;
-how the result is validated;
-whether it can affect consequential actions.
-
-## Definition of a successful handoff
-
-The handoff is successful if a fresh ChatGPT can read the repository and say, in substance:
-
- I understand what Shandon is building, who it serves, how the evaluation/progression system works at a conceptual level, what must remain private, what is already decided, what is still open, and what question I should ask next.
-
-If the next session needs the original conversation to reconstruct those basics, this documentation has failed.
-
-
-## Infrastructure decision — 2026-09-17
-
-Shandon selected the following infrastructure direction:
-- GitHub for source control;
-- GitHub Actions for CI/CD;
-- Google Artifact Registry for container images;
-- Google Cloud Run for application hosting;
-- Cloud SQL PostgreSQL 16 for the database;
-- Google Secret Manager for application secrets;
-- Workload Identity Federation for GitHub Actions authentication to Google Cloud.
-
-Google Cloud project: `thats-tuff-player-development`
-Primary region: `us-central1`
-Cloud SQL instance: `player-development-db`
-Application database: `player_development`
-Application DB user: `player_app`
-Artifact Registry repository: `player-development`
-Cloud Run runtime service account: `player-development-runtime@thats-tuff-player-development.iam.gserviceaccount.com`
-GitHub deployer service account: `github-deployer@thats-tuff-player-development.iam.gserviceaccount.com`
-
-A minimal containerized health service and GitHub Actions deployment workflow are being used to verify the infrastructure path before choosing the actual application language/framework. This infrastructure placeholder does not settle the application framework.
-
-The Cloud Run service should remain private by default until the product's authentication/public-profile rules are deliberately defined.
-
-The next product/domain work remains the Phase 0 UX walkthroughs and authorization model described above. Infrastructure setup should not be mistaken for completion of those product decisions.
-
-
-## MVP and stack decision — 2026-09-17
-
-Shandon selected the real application stack:
-- Next.js;
-- TypeScript;
-- Prisma;
-- PostgreSQL on Cloud SQL;
+The real MVP stack is now active:
+- Next.js + TypeScript;
+- Prisma 7;
+- PostgreSQL 16 on Cloud SQL;
 - Cloud Run;
 - Artifact Registry;
 - GitHub Actions;
-- Secret Manager.
+- Secret Manager;
+- Workload Identity Federation;
+- Google Identity Platform / Firebase Authentication.
 
-The README is now the active MVP work board and definition of completion.
+Cloud Run service:
+`https://player-development-rx4wq25jsq-uc.a.run.app`
 
-MVP finish line: Shandon can securely run the recurring-client player-development workflow from phone/laptop, preserve historical evaluations and meaningful progression evidence, keep trainer-private notes private, and give a connected parent/guardian secure read-only access to the approved development view.
+The web service is browser-accessible at the Cloud Run IAM layer. That does **not** mean player data is public. Sensitive APIs must verify Firebase ID tokens and apply application authorization before returning data.
 
-Recruiting/public profiles, camps, advanced templates, video hosting, player accounts, and AI coaching features are post-MVP unless explicitly reprioritized.
+Safe sample routes contain fake data only:
+- `/preview`
+- `/preview/session`
+- `/preview/baseline`
+- `/preview/reevaluation`
 
-Every meaningful engineering session must update README checkboxes only to match verified evidence and leave the README Next action accurate.
+The current trainer sample routes are:
+- `/trainer/session`
+- `/trainer/evaluation/new`
+- `/trainer/evaluation/reevaluate`
 
+Trainer routes are wrapped in a Firebase client auth gate. The server has an authenticated `/api/auth/me` endpoint that verifies the Firebase ID token with Firebase Admin, resolves the app User, binds an invited email to its Firebase UID on first successful login, and returns the app role.
 
-## Trainer normal-session UX decision — 2026-09-17
+The application User table now includes nullable unique `firebaseUid`; its production migration has been applied successfully through the Cloud Run migration job.
 
-Shandon validated the normal training-session workspace.
+Trainer authentication is **not yet marked complete** because a real trainer account has not been bootstrapped and successfully signed in end-to-end.
 
-At session open, the trainer should see today's main focus, quick coach-note tags, current development focus, the last session's most meaningful result, current goals, and an editable practice-plan outline.
+## Infrastructure / database verification
 
-Default session focus options: Ball Handling, Finishing, Shooting, Defense, Footwork, Decision Making, Conditioning, plus custom/other.
+Verified production deployment order:
+1. GitHub Actions authenticates to Google Cloud with Workload Identity Federation;
+2. container is built and pushed to Artifact Registry;
+3. Cloud Run migration job is updated with runtime service account, Cloud SQL attachment, and Secret Manager password;
+4. `prisma migrate deploy` completes against Cloud SQL;
+5. the web service deploys;
+6. Cloud Run service verification succeeds.
 
-Quick coach notes are persistent player tags used as fast reminders (examples: stronger dribble, clean up footwork). They are not the same as development-history evidence.
+The database contains the MVP schema and seeded That's Tuff Default Evaluation v1 template.
 
-Quick Log is the fast session evidence flow. It should take roughly 10–20 seconds and capture meaningful information only: shooting results, dribbling results, drill progressions, goal checks, or important observations. Each entry should also say what the result means next: goal met, keep progressing, revisit next session, or change focus.
+## Validated trainer workflows
 
-The Prisma domain model now includes TrainingSession, PracticePlanItem, PlayerCoachTag, session-linked ProgressEvent data, focus areas, event types, and next-step outcomes. An interactive trainer session prototype exists at /trainer/session. Persistence is not yet complete.
+### Normal training session
+At session open show:
+- today's main focus;
+- quick persistent coach-note tags;
+- current development focus;
+- last meaningful result;
+- active goals;
+- editable practice plan;
+- Quick Log.
 
+Quick Log should take roughly 10–20 seconds and capture only meaningful evidence such as shooting results, dribbling results, drill progression, goal checks, or important observations. Each entry captures the next meaning: goal met, keep progressing, revisit next session, or change focus.
 
-## New athlete / baseline evaluation UX decision — 2026-09-17
-
-Shandon approved the proposed baseline workflow.
-
-The baseline is a three-step trainer flow:
+### New athlete / baseline
+Three-step flow:
 1. athlete intake;
-2. 12-category evaluation;
-3. first development plan.
+2. 12-category baseline, with Not Assessed allowed;
+3. first development plan with top 2–3 priorities and one short-term goal.
 
-Intake captures core athlete identity and basketball context: name, DOB/grade, height, position, school/team, years playing, playing experience, player/parent view of development needs, basketball goals, guardian contact, and only training limitations relevant to safe/appropriate training.
+### Reevaluation
+Approved flow:
+- preserve previous evaluation unchanged;
+- show meaningful evidence since it;
+- compare previous rating to new trainer-selected rating;
+- optional trainer explanation;
+- save a brand-new historical evaluation;
+- separately update active priorities and short-term goal.
 
-The current 12-category template remains visible for consistency. A category may be marked Not Assessed when the trainer did not meaningfully observe it. Assessed categories use the 1–5 That's Tuff scale with quick observation tags plus optional trainer notes/evidence.
-
-At the end, Shandon selects the top 2–3 development priorities and one short-term goal. These seed the athlete's initial development focus. The purpose of the baseline is to leave with an actionable first plan, not merely a set of ratings.
-
-The Prisma model now allows nullable category ratings, quick observation tags, baseline priority snapshots, and a short-term-goal snapshot. The interactive prototype is at /trainer/evaluation/new. Persistence is still pending database migration/server actions.
-
-
-## Reevaluation prototype — pending Shandon approval
-
-A proposed reevaluation flow now exists at /trainer/evaluation/reevaluate.
-
-It preserves the prior evaluation and creates a new evaluation rather than editing history. For each category, the trainer sees the previous rating, meaningful evidence logged since the previous evaluation, the new rating controls, and an optional explanation for why the rating changed or stayed the same.
-
-The final step updates the active 2–3 development priorities and short-term goal separately from the historical evaluation record.
-
-This flow is implemented as a prototype but is not yet marked validated. Shandon should review whether this is how he wants reevaluations to work before the first production database migration is finalized.
-
-
-## Reevaluation UX approved — 2026-09-17
-
-Shandon approved the proposed reevaluation workflow without changes.
-
-The approved flow is:
-- preserve the previous evaluation unchanged;
-- surface meaningful progression/Quick Log evidence since that evaluation;
-- show previous rating next to the new trainer-selected rating and visible delta;
-- allow a trainer explanation for changed or unchanged ratings;
-- create a brand-new historical evaluation;
-- separately update the active 2–3 development priorities and short-term goal.
-
-The first production database migration is now the next engineering milestone. Production migrations are automated through a Cloud Run job using the runtime service account, Cloud SQL attachment, and Secret Manager database password. The deploy pipeline must apply migrations successfully before deploying the web service.
-
-
-## First production database migration verified — 2026-09-17
-
-The first Prisma production migration was applied successfully to the real Cloud SQL PostgreSQL database through the automated Cloud Run migration job.
-
-Verified deployment order:
-1. GitHub Actions builds and pushes the container;
-2. the migration Cloud Run job is configured with the runtime service account, Cloud SQL attachment, and Secret Manager DB password;
-3. `prisma migrate deploy` completes successfully;
-4. the web service deploys afterward;
-5. Cloud Run service verification succeeds.
-
-The database now contains the initial MVP schema and the seeded That's Tuff Default Evaluation v1 template with the 12 current evaluation categories.
-
-README Phase 1 items for secure Prisma/Cloud SQL connection and the initial schema/migrations are verified complete.
-
-Next product decision: finalize exactly which player-development fields parents may see versus trainer-only fields, then choose authentication.
-
-
-## Parent / trainer privacy boundary approved — 2026-09-17
-
-Shandon approved the proposed parent-visible versus trainer-only split.
+## Parent / trainer privacy boundary
 
 Parent-visible by default:
-- player basics needed for the development dashboard (name, preferred name, class year, height, position, school/team);
+- player basics needed for the dashboard;
 - goals;
 - current/historical development focus;
-- formal evaluation ratings/history and parent-safe evaluation summary/plan fields;
+- formal evaluation ratings/history and parent-safe summary/plan fields;
 - achievements;
 - assigned work;
-- Quick Logs only when the trainer explicitly marks them Parent Visible.
+- Quick Logs only when explicitly marked Parent Visible.
 
 Trainer-only by default:
 - TrainerNote records;
 - PlayerCoachTag records;
-- DOB and intake context not needed for the parent dashboard;
-- self-reported needs / playing-experience notes;
+- DOB and nonessential intake context;
+- self-reported needs and playing-experience notes;
 - training limitations;
-- practice plans and internal training-session planning;
-- evaluation observation tags, evidence, internal notes, and rating-change explanation;
+- practice plans and internal session planning;
+- evaluation observation tags, evidence, internal notes, rating-change explanation;
 - ProgressEvent internal context/notes/next-time reminder;
-- all Quick Logs unless explicitly marked Parent Visible.
+- all Quick Logs unless explicitly Parent Visible.
 
-A server-side Prisma allowlist now defines the parent player view. Parent privacy must never rely only on hiding UI fields.
+A server-side Prisma allowlist defines the parent player view. UI hiding is never sufficient authorization.
 
-ProgressEvent now has parentVisible=false by default. A follow-up production migration adds this field.
+## Authentication model
 
+Identity: Google Identity Platform / Firebase Authentication.
 
-## Authentication implementation chosen — 2026-09-17
+Authorization: application-controlled User.role plus GuardianPlayer relationships.
 
-The MVP authentication system is Google Identity Platform / Firebase Authentication.
+Flow:
+1. browser signs in with Firebase;
+2. browser receives Firebase ID token;
+3. protected API receives ID token as Bearer token;
+4. Firebase Admin verifies it server-side;
+5. verified email/UID maps to the app User row;
+6. role and player relationships decide authorization;
+7. parent queries use the parent-safe Prisma allowlist.
 
-Reasoning:
-- the app needs end-user parent/guardian accounts, not only internal Google Cloud IAM users;
-- Cloud Run's documented end-user pattern supports Identity Platform/Firebase Authentication;
-- credentials/password handling should remain with a managed identity service rather than the application;
-- the application still owns authorization.
+Current MVP login UI supports email/password. Public sample preview pages require no sign-in because they contain no real client data.
 
-Authentication proves identity. Authorization remains application-controlled through the User.role and GuardianPlayer relationships.
+## Next action
 
-Planned model:
-1. web client signs in through Identity Platform/Firebase Authentication;
-2. client receives an ID token;
-3. server verifies the ID token;
-4. verified identity maps to the app User row;
-5. trainer/guardian/admin role checks and GuardianPlayer ownership determine access;
-6. parent-facing queries use the explicit parent-safe Prisma allowlist.
+Bootstrap the first trainer account:
+1. get from Shandon the exact email he wants to use as his trainer login;
+2. create or seed an application User with that email and role TRAINER;
+3. have Shandon create the matching email/password user in Identity Platform (or add an admin-assisted invitation flow later);
+4. sign in through `/login`;
+5. verify `/api/auth/me` binds the Firebase UID and returns TRAINER;
+6. only then check off Trainer authentication in README.
 
-Do not make the production Cloud Run service unauthenticated/public until the application-level auth guard and negative-path authorization tests are in place.
+After trainer auth is verified, connect Player create/edit and baseline evaluation to real Cloud SQL persistence.
+
+## Engineering guidance
+
+Do not confuse AI-assisted development with the application needing runtime AI. The MVP is deterministic CRUD/workflow/reporting/authorization.
+
+Do not mark roadmap work complete just because code exists. Require verification. Read README first, update it after verified milestones, and leave its Next action accurate.
+
+Do not expose trainer-private data in parent APIs. Every future protected API must verify Firebase identity and server-side authorization.
+
+Do not auto-create arbitrary signed-in Firebase users as application users. Accounts must be explicitly invited/created in the application so a random authenticated Firebase user cannot gain access.
