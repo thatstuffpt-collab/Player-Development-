@@ -349,3 +349,18 @@ It preserves the prior evaluation and creates a new evaluation rather than editi
 The final step updates the active 2–3 development priorities and short-term goal separately from the historical evaluation record.
 
 This flow is implemented as a prototype but is not yet marked validated. Shandon should review whether this is how he wants reevaluations to work before the first production database migration is finalized.
+
+
+## Reevaluation UX approved — 2026-09-17
+
+Shandon approved the proposed reevaluation workflow without changes.
+
+The approved flow is:
+- preserve the previous evaluation unchanged;
+- surface meaningful progression/Quick Log evidence since that evaluation;
+- show previous rating next to the new trainer-selected rating and visible delta;
+- allow a trainer explanation for changed or unchanged ratings;
+- create a brand-new historical evaluation;
+- separately update the active 2–3 development priorities and short-term goal.
+
+The first production database migration is now the next engineering milestone. Production migrations are automated through a Cloud Run job using the runtime service account, Cloud SQL attachment, and Secret Manager database password. The deploy pipeline must apply migrations successfully before deploying the web service.
