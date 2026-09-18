@@ -37,7 +37,7 @@ function LoginForm() {
       }
 
       const requested = searchParams.get("next");
-      const fallback = payload.user.role === "GUARDIAN" ? "/parent" : "/trainer/session";
+      const fallback = payload.user.role === "GUARDIAN" ? "/parent" : "/trainer/players";
       router.replace(requested?.startsWith("/") ? requested : fallback);
     } catch {
       setError("Email or password was not accepted. Check your account and try again.");
