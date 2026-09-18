@@ -199,8 +199,8 @@ Checkboxes may only be marked complete when the result is implemented and verifi
 
 - [x] Replace temporary Python health app with Next.js + TypeScript
 - [x] Add Prisma
-- [ ] Connect Prisma securely to Cloud SQL
-- [ ] Create initial database schema and migrations
+- [x] Connect Prisma securely to Cloud SQL
+- [x] Create initial database schema and migrations
 - [x] Add local development configuration with no committed secrets
 - [ ] Add automated tests and CI checks
 - [x] Add production health/readiness endpoint
@@ -326,7 +326,7 @@ A reevaluation prototype now follows the existing historical-data rules:
 
 ## Next action
 
-Apply and verify the first production database migration through the automated Cloud Run migration job. Once verified, connect the trainer workflows to real persisted Player, Goal, Evaluation, TrainingSession, ProgressEvent, DevelopmentFocus, Achievement, AssignedWork, and TrainerNote data.
+Finalize the MVP parent-visible and trainer-private field boundaries with Shandon. After those privacy rules are locked, choose the authentication implementation and connect the trainer workflows to real persisted data.
 
 ## Product behavior and invariants
 
