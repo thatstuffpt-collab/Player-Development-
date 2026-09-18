@@ -191,8 +191,8 @@ Checkboxes may only be marked complete when the result is implemented and verifi
 - [x] Validate trainer normal-session UX
 - [x] Validate new-client/baseline-evaluation UX
 - [x] Validate reevaluation UX
-- [ ] Finalize MVP parent-visible field set
-- [ ] Finalize trainer-private field set
+- [x] Finalize MVP parent-visible field set
+- [x] Finalize trainer-private field set
 - [ ] Choose authentication implementation
 
 ### Phase 1 — Real application foundation
@@ -324,9 +324,34 @@ A reevaluation prototype now follows the existing historical-data rules:
 5. finish by keeping, removing, or replacing the athlete's top 2–3 priorities and updating the short-term goal;
 6. save the result as a brand-new evaluation and update the active development plan separately.
 
+## Parent / trainer privacy boundary
+
+Parent-visible by default:
+- player basics: name, preferred name, class year, height, position, school/team;
+- active/completed goals;
+- current and historical development focus;
+- formal evaluation dates, template/version, ratings, priorities, short-term goal, summary, and next focus;
+- achievements;
+- assigned development work;
+- only Quick Log / ProgressEvent entries explicitly marked Parent Visible.
+
+Trainer-only by default:
+- trainer-private notes;
+- quick coach-note tags;
+- DOB;
+- intake/self-reported needs and playing-experience notes;
+- training limitations;
+- practice plans and internal session planning;
+- evaluation observation tags;
+- evaluation evidence/internal notes and rating-change explanation;
+- ProgressEvent context, internal notes, and next-time coaching reminder;
+- any Quick Log not explicitly marked Parent Visible.
+
+Parent APIs must use an explicit server-side allowlist. UI hiding is not sufficient.
+
 ## Next action
 
-Finalize the MVP parent-visible and trainer-private field boundaries with Shandon. After those privacy rules are locked, choose the authentication implementation and connect the trainer workflows to real persisted data.
+Choose and implement the authentication system, then connect trainer workflows to real persisted data.
 
 ## Product behavior and invariants
 
