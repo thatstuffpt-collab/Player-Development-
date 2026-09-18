@@ -313,9 +313,22 @@ A new athlete baseline uses a three-step flow:
 
 The baseline should produce an actionable plan, not just a scorecard.
 
+## Proposed reevaluation UX
+
+A reevaluation prototype now follows the existing historical-data rules:
+
+1. show the previous evaluation without editing it;
+2. surface meaningful Quick Log/progression evidence recorded since that evaluation;
+3. let the trainer select a new 1–5 rating for each category while seeing the prior rating and rating change;
+4. allow an explanation for why a rating changed or stayed the same;
+5. finish by keeping, removing, or replacing the athlete's top 2–3 priorities and updating the short-term goal;
+6. save the result as a brand-new evaluation and update the active development plan separately.
+
+The reevaluation checkbox remains open until Shandon reviews and approves this flow.
+
 ## Next action
 
-Validate the reevaluation UX: define how evidence since the previous evaluation should be surfaced, how changed/unchanged ratings should be handled, and how the next development focus is updated without overwriting historical evaluations.
+Have Shandon review the reevaluation prototype and approve or adjust the comparison/evidence/updated-plan flow. After approval, finalize the schema and create the first real database migration.
 
 ## Product behavior and invariants
 
