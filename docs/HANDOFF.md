@@ -320,3 +320,21 @@ Quick coach notes are persistent player tags used as fast reminders (examples: s
 Quick Log is the fast session evidence flow. It should take roughly 10–20 seconds and capture meaningful information only: shooting results, dribbling results, drill progressions, goal checks, or important observations. Each entry should also say what the result means next: goal met, keep progressing, revisit next session, or change focus.
 
 The Prisma domain model now includes TrainingSession, PracticePlanItem, PlayerCoachTag, session-linked ProgressEvent data, focus areas, event types, and next-step outcomes. An interactive trainer session prototype exists at /trainer/session. Persistence is not yet complete.
+
+
+## New athlete / baseline evaluation UX decision — 2026-09-17
+
+Shandon approved the proposed baseline workflow.
+
+The baseline is a three-step trainer flow:
+1. athlete intake;
+2. 12-category evaluation;
+3. first development plan.
+
+Intake captures core athlete identity and basketball context: name, DOB/grade, height, position, school/team, years playing, playing experience, player/parent view of development needs, basketball goals, guardian contact, and only training limitations relevant to safe/appropriate training.
+
+The current 12-category template remains visible for consistency. A category may be marked Not Assessed when the trainer did not meaningfully observe it. Assessed categories use the 1–5 That's Tuff scale with quick observation tags plus optional trainer notes/evidence.
+
+At the end, Shandon selects the top 2–3 development priorities and one short-term goal. These seed the athlete's initial development focus. The purpose of the baseline is to leave with an actionable first plan, not merely a set of ratings.
+
+The Prisma model now allows nullable category ratings, quick observation tags, baseline priority snapshots, and a short-term-goal snapshot. The interactive prototype is at /trainer/evaluation/new. Persistence is still pending database migration/server actions.
