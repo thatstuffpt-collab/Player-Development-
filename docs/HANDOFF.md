@@ -305,3 +305,18 @@ MVP finish line: Shandon can securely run the recurring-client player-developmen
 Recruiting/public profiles, camps, advanced templates, video hosting, player accounts, and AI coaching features are post-MVP unless explicitly reprioritized.
 
 Every meaningful engineering session must update README checkboxes only to match verified evidence and leave the README Next action accurate.
+
+
+## Trainer normal-session UX decision — 2026-09-17
+
+Shandon validated the normal training-session workspace.
+
+At session open, the trainer should see today's main focus, quick coach-note tags, current development focus, the last session's most meaningful result, current goals, and an editable practice-plan outline.
+
+Default session focus options: Ball Handling, Finishing, Shooting, Defense, Footwork, Decision Making, Conditioning, plus custom/other.
+
+Quick coach notes are persistent player tags used as fast reminders (examples: stronger dribble, clean up footwork). They are not the same as development-history evidence.
+
+Quick Log is the fast session evidence flow. It should take roughly 10–20 seconds and capture meaningful information only: shooting results, dribbling results, drill progressions, goal checks, or important observations. Each entry should also say what the result means next: goal met, keep progressing, revisit next session, or change focus.
+
+The Prisma domain model now includes TrainingSession, PracticePlanItem, PlayerCoachTag, session-linked ProgressEvent data, focus areas, event types, and next-step outcomes. An interactive trainer session prototype exists at /trainer/session. Persistence is not yet complete.
