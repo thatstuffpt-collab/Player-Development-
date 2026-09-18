@@ -190,7 +190,7 @@ Checkboxes may only be marked complete when the result is implemented and verifi
 - [x] Verify first automated Cloud Run deployment is fully successful
 - [x] Validate trainer normal-session UX
 - [x] Validate new-client/baseline-evaluation UX
-- [ ] Validate reevaluation UX
+- [x] Validate reevaluation UX
 - [ ] Finalize MVP parent-visible field set
 - [ ] Finalize trainer-private field set
 - [ ] Choose authentication implementation
@@ -313,7 +313,7 @@ A new athlete baseline uses a three-step flow:
 
 The baseline should produce an actionable plan, not just a scorecard.
 
-## Proposed reevaluation UX
+## Validated reevaluation UX
 
 A reevaluation prototype now follows the existing historical-data rules:
 
@@ -324,11 +324,9 @@ A reevaluation prototype now follows the existing historical-data rules:
 5. finish by keeping, removing, or replacing the athlete's top 2–3 priorities and updating the short-term goal;
 6. save the result as a brand-new evaluation and update the active development plan separately.
 
-The reevaluation checkbox remains open until Shandon reviews and approves this flow.
-
 ## Next action
 
-Have Shandon review the reevaluation prototype and approve or adjust the comparison/evidence/updated-plan flow. After approval, finalize the schema and create the first real database migration.
+Apply and verify the first production database migration through the automated Cloud Run migration job. Once verified, connect the trainer workflows to real persisted Player, Goal, Evaluation, TrainingSession, ProgressEvent, DevelopmentFocus, Achievement, AssignedWork, and TrainerNote data.
 
 ## Product behavior and invariants
 
