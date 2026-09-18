@@ -161,9 +161,6 @@ The system should make progress understandable without turning normal training i
 
 Do not invent these as settled facts:
 
-implementation language/framework;
-database;
-cloud/hosting platform;
 whether the first UX is desktop-first, phone-first, or balanced responsive web;
 exact parent invitation/account recovery flow;
 whether coach/recruiter links are public, secret-token, expiring, or authenticated;
@@ -186,8 +183,6 @@ Start with the remaining Phase 0 decisions in README.
 A good first question to Shandon is:
 
  When you're actually using this during your week, where do you picture yourself opening it most—your phone in the gym, a laptop after training, or both? And when you need to record one meaningful result, what is the fastest interaction you would want?
-
-Then determine the implementation stack **after** understanding the primary interaction.
 
 Do not spend multiple sessions choosing infrastructure before validating the trainer workflow.
 
@@ -289,3 +284,24 @@ A minimal containerized health service and GitHub Actions deployment workflow ar
 The Cloud Run service should remain private by default until the product's authentication/public-profile rules are deliberately defined.
 
 The next product/domain work remains the Phase 0 UX walkthroughs and authorization model described above. Infrastructure setup should not be mistaken for completion of those product decisions.
+
+
+## MVP and stack decision — 2026-09-17
+
+Shandon selected the real application stack:
+- Next.js;
+- TypeScript;
+- Prisma;
+- PostgreSQL on Cloud SQL;
+- Cloud Run;
+- Artifact Registry;
+- GitHub Actions;
+- Secret Manager.
+
+The README is now the active MVP work board and definition of completion.
+
+MVP finish line: Shandon can securely run the recurring-client player-development workflow from phone/laptop, preserve historical evaluations and meaningful progression evidence, keep trainer-private notes private, and give a connected parent/guardian secure read-only access to the approved development view.
+
+Recruiting/public profiles, camps, advanced templates, video hosting, player accounts, and AI coaching features are post-MVP unless explicitly reprioritized.
+
+Every meaningful engineering session must update README checkboxes only to match verified evidence and leave the README Next action accurate.
