@@ -90,6 +90,10 @@ model Player {
   height             String?
   position           String?
   schoolTeam         String?
+  yearsPlaying       Int?
+  playingExperience  String?
+  selfReportedNeeds  String?
+  trainingLimitations String?
   archivedAt         DateTime?
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
@@ -167,6 +171,8 @@ model Evaluation {
   evaluatedAt    DateTime           @default(now())
   summary        String?
   nextFocus      String?
+  priorityAreas  String[]           @default([])
+  shortTermGoal  String?
   createdAt      DateTime           @default(now())
   player         Player             @relation(fields: [playerId], references: [id], onDelete: Cascade)
   template       EvaluationTemplate @relation(fields: [templateId], references: [id])
@@ -179,7 +185,8 @@ model EvaluationRating {
   id           String              @id @default(cuid())
   evaluationId String
   criterionId  String
-  rating       Int
+  rating       Int?
+  observationTags String[]          @default([])
   note         String?
   evidence     String?
   evaluation   Evaluation          @relation(fields: [evaluationId], references: [id], onDelete: Cascade)
