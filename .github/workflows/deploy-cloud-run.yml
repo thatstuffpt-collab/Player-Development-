@@ -5,7 +5,13 @@ on:
     branches:
       - main
     paths:
-      - "app.py"
+      - "src/**"
+      - "public/**"
+      - "prisma/**"
+      - "package.json"
+      - "prisma.config.ts"
+      - "next.config.ts"
+      - "tsconfig.json"
       - "Dockerfile"
       - ".dockerignore"
       - ".github/workflows/deploy-cloud-run.yml"

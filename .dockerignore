@@ -1,6 +1,9 @@
 .git
 .github
-__pycache__
-*.pyc
+node_modules
+.next
 .env
 .env.*
+npm-debug.log*
+README.md
+docs

@@ -1,0 +1,230 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  TRAINER
+  GUARDIAN
+  ADMIN
+}
+
+enum GoalType {
+  BIG_PICTURE
+  DEVELOPMENT
+}
+
+enum GoalStatus {
+  ACTIVE
+  COMPLETED
+  PAUSED
+  ARCHIVED
+}
+
+enum AchievementType {
+  TEAM_SELECTION
+  AWARD
+  OFFER
+  PERSONAL_MILESTONE
+  RATING_IMPROVEMENT
+  TRAINING_MILESTONE
+  CAMP_RECOGNITION
+  OTHER
+}
+
+enum WorkStatus {
+  ASSIGNED
+  IN_PROGRESS
+  COMPLETED
+  ARCHIVED
+}
+
+model User {
+  id              String           @id @default(cuid())
+  email           String           @unique
+  displayName     String?
+  role            UserRole
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  guardianPlayers GuardianPlayer[]
+}
+
+model Player {
+  id                 String             @id @default(cuid())
+  firstName          String
+  lastName           String
+  preferredName      String?
+  birthDate          DateTime?
+  classYear          Int?
+  height             String?
+  position           String?
+  schoolTeam         String?
+  archivedAt         DateTime?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  guardians          GuardianPlayer[]
+  goals              Goal[]
+  evaluations        Evaluation[]
+  progressEvents     ProgressEvent[]
+  achievements       Achievement[]
+  assignedWork       AssignedWork[]
+  trainerNotes       TrainerNote[]
+  developmentFocuses DevelopmentFocus[]
+}
+
+model GuardianPlayer {
+  id         String   @id @default(cuid())
+  guardianId String
+  playerId   String
+  createdAt  DateTime @default(now())
+  guardian   User     @relation(fields: [guardianId], references: [id], onDelete: Cascade)
+  player     Player   @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@unique([guardianId, playerId])
+  @@index([playerId])
+}
+
+model Goal {
+  id          String     @id @default(cuid())
+  playerId    String
+  type        GoalType
+  title       String
+  description String?
+  status      GoalStatus @default(ACTIVE)
+  targetDate  DateTime?
+  completedAt DateTime?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  player      Player     @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@index([playerId, status])
+}
+
+model EvaluationTemplate {
+  id          String                @id @default(cuid())
+  name        String
+  description String?
+  version     Int
+  isActive    Boolean               @default(true)
+  createdAt   DateTime              @default(now())
+  criteria    EvaluationCriterion[]
+  evaluations Evaluation[]
+
+  @@unique([name, version])
+}
+
+model EvaluationCriterion {
+  id          String              @id @default(cuid())
+  templateId  String
+  key         String
+  label       String
+  description String?
+  sortOrder   Int
+  template    EvaluationTemplate  @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  ratings     EvaluationRating[]
+
+  @@unique([templateId, key])
+  @@unique([templateId, sortOrder])
+}
+
+model Evaluation {
+  id             String             @id @default(cuid())
+  playerId       String
+  templateId     String
+  evaluatedAt    DateTime           @default(now())
+  summary        String?
+  nextFocus      String?
+  createdAt      DateTime           @default(now())
+  player         Player             @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  template       EvaluationTemplate @relation(fields: [templateId], references: [id])
+  ratings        EvaluationRating[]
+
+  @@index([playerId, evaluatedAt])
+}
+
+model EvaluationRating {
+  id           String              @id @default(cuid())
+  evaluationId String
+  criterionId  String
+  rating       Int
+  note         String?
+  evidence     String?
+  evaluation   Evaluation          @relation(fields: [evaluationId], references: [id], onDelete: Cascade)
+  criterion    EvaluationCriterion @relation(fields: [criterionId], references: [id])
+
+  @@unique([evaluationId, criterionId])
+  @@index([criterionId])
+}
+
+model ProgressEvent {
+  id          String   @id @default(cuid())
+  playerId    String
+  occurredAt  DateTime @default(now())
+  category    String
+  title       String
+  result      String
+  context     String?
+  notes       String?
+  createdAt   DateTime @default(now())
+  player      Player   @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@index([playerId, occurredAt])
+}
+
+model DevelopmentFocus {
+  id          String   @id @default(cuid())
+  playerId    String
+  focus       String
+  reason      String?
+  startedAt   DateTime @default(now())
+  completedAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  player      Player   @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@index([playerId, completedAt])
+}
+
+model Achievement {
+  id          String          @id @default(cuid())
+  playerId    String
+  type        AchievementType @default(OTHER)
+  title       String
+  description String?
+  achievedAt  DateTime        @default(now())
+  createdAt   DateTime        @default(now())
+  player      Player          @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@index([playerId, achievedAt])
+}
+
+model AssignedWork {
+  id          String     @id @default(cuid())
+  playerId    String
+  title       String
+  description String?
+  status      WorkStatus @default(ASSIGNED)
+  assignedAt  DateTime   @default(now())
+  dueAt       DateTime?
+  completedAt DateTime?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  player      Player     @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@index([playerId, status])
+}
+
+model TrainerNote {
+  id        String   @id @default(cuid())
+  playerId  String
+  body      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  player    Player   @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@index([playerId, createdAt])
+}
