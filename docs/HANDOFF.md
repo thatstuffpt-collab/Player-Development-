@@ -262,3 +262,30 @@ The handoff is successful if a fresh ChatGPT can read the repository and say, in
  I understand what Shandon is building, who it serves, how the evaluation/progression system works at a conceptual level, what must remain private, what is already decided, what is still open, and what question I should ask next.
 
 If the next session needs the original conversation to reconstruct those basics, this documentation has failed.
+
+
+## Infrastructure decision — 2026-09-17
+
+Shandon selected the following infrastructure direction:
+- GitHub for source control;
+- GitHub Actions for CI/CD;
+- Google Artifact Registry for container images;
+- Google Cloud Run for application hosting;
+- Cloud SQL PostgreSQL 16 for the database;
+- Google Secret Manager for application secrets;
+- Workload Identity Federation for GitHub Actions authentication to Google Cloud.
+
+Google Cloud project: `thats-tuff-player-development`
+Primary region: `us-central1`
+Cloud SQL instance: `player-development-db`
+Application database: `player_development`
+Application DB user: `player_app`
+Artifact Registry repository: `player-development`
+Cloud Run runtime service account: `player-development-runtime@thats-tuff-player-development.iam.gserviceaccount.com`
+GitHub deployer service account: `github-deployer@thats-tuff-player-development.iam.gserviceaccount.com`
+
+A minimal containerized health service and GitHub Actions deployment workflow are being used to verify the infrastructure path before choosing the actual application language/framework. This infrastructure placeholder does not settle the application framework.
+
+The Cloud Run service should remain private by default until the product's authentication/public-profile rules are deliberately defined.
+
+The next product/domain work remains the Phase 0 UX walkthroughs and authorization model described above. Infrastructure setup should not be mistaken for completion of those product decisions.
