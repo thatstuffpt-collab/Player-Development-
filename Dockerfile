@@ -1,5 +1,6 @@
 FROM node:24-slim AS deps
 WORKDIR /app
+RUN apt-get update -y && apt-get install -y --no-install-recommends openssl && rm -rf /var/lib/apt/lists/*
 COPY package.json ./
 COPY prisma ./prisma
 COPY prisma.config.ts ./
@@ -10,6 +11,7 @@ WORKDIR /app
 ENV NEXT_TELEMETRY_DISABLED=1
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+COPY --from=deps /app/src/generated ./src/generated
 RUN npm run build
 
 FROM node:24-slim AS runner
