@@ -189,7 +189,7 @@ Checkboxes may only be marked complete when the result is implemented and verifi
 - [x] Add automated container build/deploy workflow
 - [x] Verify first automated Cloud Run deployment is fully successful
 - [x] Validate trainer normal-session UX
-- [ ] Validate new-client/baseline-evaluation UX
+- [x] Validate new-client/baseline-evaluation UX
 - [ ] Validate reevaluation UX
 - [ ] Finalize MVP parent-visible field set
 - [ ] Finalize trainer-private field set
@@ -303,9 +303,19 @@ Quick Log is for meaningful evidence only, including shooting results, dribbling
 
 Persistent coach tags and historical Quick Log evidence are separate concepts. Tags are current reminders; Quick Logs are dated development evidence.
 
+## Validated baseline-evaluation UX
+
+A new athlete baseline uses a three-step flow:
+
+1. Athlete intake: name, DOB/grade, height, position, school/team, years playing, basketball experience, player/parent view of needs, basketball goals, only training limitations relevant to safe training, and guardian contact.
+2. Evaluation: use the current 12-category template. Categories remain visible for consistency, but the trainer may mark a category Not Assessed when it was not meaningfully observed. Each assessed category uses the 1–5 That's Tuff rating plus quick observation tags and an optional trainer note/evidence.
+3. First development plan: choose the athlete's top 2–3 development priorities and one short-term goal. Those choices seed the initial development focus.
+
+The baseline should produce an actionable plan, not just a scorecard.
+
 ## Next action
 
-Validate the new-client/baseline-evaluation UX with Shandon. Define how a new athlete is created, what information is required before the first evaluation, how the first 12-category evaluation should flow on phone/tablet, and how Shandon chooses the initial development focus after the baseline.
+Validate the reevaluation UX: define how evidence since the previous evaluation should be surfaced, how changed/unchanged ratings should be handled, and how the next development focus is updated without overwriting historical evaluations.
 
 ## Product behavior and invariants
 
