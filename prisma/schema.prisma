@@ -72,6 +72,7 @@ enum ProgressNextStep {
 
 model User {
   id              String           @id @default(cuid())
+  firebaseUid     String?          @unique
   email           String           @unique
   displayName     String?
   role            UserRole
@@ -81,32 +82,32 @@ model User {
 }
 
 model Player {
-  id                 String             @id @default(cuid())
-  firstName          String
-  lastName           String
-  preferredName      String?
-  birthDate          DateTime?
-  classYear          Int?
-  height             String?
-  position           String?
-  schoolTeam         String?
-  yearsPlaying       Int?
-  playingExperience  String?
-  selfReportedNeeds  String?
+  id                  String             @id @default(cuid())
+  firstName           String
+  lastName            String
+  preferredName       String?
+  birthDate           DateTime?
+  classYear           Int?
+  height              String?
+  position            String?
+  schoolTeam          String?
+  yearsPlaying        Int?
+  playingExperience   String?
+  selfReportedNeeds   String?
   trainingLimitations String?
-  archivedAt         DateTime?
-  createdAt          DateTime           @default(now())
-  updatedAt          DateTime           @updatedAt
-  guardians          GuardianPlayer[]
-  goals              Goal[]
-  evaluations        Evaluation[]
-  progressEvents     ProgressEvent[]
-  achievements       Achievement[]
-  assignedWork       AssignedWork[]
-  trainerNotes       TrainerNote[]
-  developmentFocuses DevelopmentFocus[]
-  trainingSessions   TrainingSession[]
-  coachTags          PlayerCoachTag[]
+  archivedAt          DateTime?
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+  guardians           GuardianPlayer[]
+  goals               Goal[]
+  evaluations         Evaluation[]
+  progressEvents      ProgressEvent[]
+  achievements        Achievement[]
+  assignedWork        AssignedWork[]
+  trainerNotes        TrainerNote[]
+  developmentFocuses  DevelopmentFocus[]
+  trainingSessions    TrainingSession[]
+  coachTags           PlayerCoachTag[]
 }
 
 model GuardianPlayer {
@@ -182,37 +183,37 @@ model Evaluation {
 }
 
 model EvaluationRating {
-  id           String              @id @default(cuid())
-  evaluationId String
-  criterionId  String
-  rating       Int?
-  observationTags String[]          @default([])
-  note         String?
-  evidence     String?
-  evaluation   Evaluation          @relation(fields: [evaluationId], references: [id], onDelete: Cascade)
-  criterion    EvaluationCriterion @relation(fields: [criterionId], references: [id])
+  id              String              @id @default(cuid())
+  evaluationId    String
+  criterionId     String
+  rating          Int?
+  observationTags String[]            @default([])
+  note            String?
+  evidence        String?
+  evaluation      Evaluation          @relation(fields: [evaluationId], references: [id], onDelete: Cascade)
+  criterion       EvaluationCriterion @relation(fields: [criterionId], references: [id])
 
   @@unique([evaluationId, criterionId])
   @@index([criterionId])
 }
 
 model ProgressEvent {
-  id          String            @id @default(cuid())
-  playerId    String
-  sessionId   String?
-  occurredAt  DateTime          @default(now())
-  type        ProgressEventType @default(OTHER)
-  category    String
-  title       String
-  result      String
-  context     String?
-  notes       String?
-  nextStep    ProgressNextStep?
-  nextTime    String?
+  id            String            @id @default(cuid())
+  playerId      String
+  sessionId     String?
+  occurredAt    DateTime          @default(now())
+  type          ProgressEventType @default(OTHER)
+  category      String
+  title         String
+  result        String
+  context       String?
+  notes         String?
+  nextStep      ProgressNextStep?
+  nextTime      String?
   parentVisible Boolean           @default(false)
-  createdAt   DateTime          @default(now())
-  player      Player            @relation(fields: [playerId], references: [id], onDelete: Cascade)
-  session     TrainingSession?  @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+  createdAt     DateTime          @default(now())
+  player        Player            @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  session       TrainingSession?  @relation(fields: [sessionId], references: [id], onDelete: SetNull)
 
   @@index([playerId, occurredAt])
   @@index([sessionId])
