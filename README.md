@@ -162,7 +162,22 @@ GitHub deployer service account:
 
 `github-deployer@thats-tuff-player-development.iam.gserviceaccount.com`
 
-The Cloud Run service remains private by default until authentication and any future public-profile policy are deliberately implemented.
+Cloud Run web service:
+
+`https://player-development-rx4wq25jsq-uc.a.run.app`
+
+The Cloud Run web service is browser-accessible. Sample preview routes contain fake data only. Protected trainer and future parent/player APIs must verify Firebase/Identity Platform ID tokens and enforce application authorization before returning protected data.
+
+## Preview routes
+
+These routes are intentionally safe to open without a login because they contain sample data only:
+
+- Preview hub: `/preview`
+- Training session sample: `/preview/session`
+- New-athlete baseline sample: `/preview/baseline`
+- Reevaluation sample: `/preview/reevaluation`
+
+Real trainer routes live under `/trainer/*` and are gated by Firebase authentication. The auth foundation is implemented, but Trainer authentication is not considered complete until the first real trainer account signs in successfully and is verified against the application User record.
 
 ## Delivery roadmap
 
@@ -205,10 +220,12 @@ Checkboxes may only be marked complete when the result is implemented and verifi
 - [ ] Add automated tests and CI checks
 - [x] Add production health/readiness endpoint
 - [x] Verify Next.js application deploys successfully to Cloud Run
+- [x] Add Firebase/Identity Platform auth foundation and server-side ID-token verification
+- [x] Add safe browser preview routes using sample data only
 
 ### Phase 2 — Trainer core workflow
 
-- [ ] Trainer authentication
+- [ ] Trainer authentication (foundation implemented; first real trainer login verification pending)
 - [ ] Player create/edit/archive
 - [ ] Player profile
 - [ ] Big-picture goals
@@ -349,22 +366,22 @@ Trainer-only by default:
 
 Parent APIs must use an explicit server-side allowlist. UI hiding is not sufficient.
 
-## Authentication decision
+## Authentication implementation
 
-Use Google Identity Platform / Firebase Authentication for trainer and parent/guardian sign-in.
+Google Identity Platform / Firebase Authentication is configured as the end-user identity system.
 
-Principles:
-- use a managed identity system rather than storing passwords ourselves;
-- support parent-friendly sign-in methods such as email/password or email link, with Google sign-in available where useful;
-- verify Identity Platform/Firebase ID tokens on the server;
-- map the authenticated identity to the application's User record;
-- enforce TRAINER/GUARDIAN/ADMIN roles and GuardianPlayer relationships on the server;
-- keep Cloud Run private until application-level authentication guards are implemented and verified;
-- after guards are verified, make the web service browser-accessible while protected player data remains authorization-gated.
+Current implementation:
+- Firebase web SDK handles browser sign-in;
+- Firebase Admin verifies ID tokens server-side;
+- application Users map to Firebase identities with `firebaseUid`;
+- the first successful authorized login may bind an invited User row to that Firebase UID;
+- server authorization still uses application roles and GuardianPlayer relationships;
+- protected APIs must require a verified ID token;
+- sample `/preview/*` routes contain fake data only and remain intentionally public.
 
 ## Next action
 
-Enable/configure Identity Platform/Firebase Authentication in the Google Cloud project and obtain the web-app configuration. Then implement server-side token verification, trainer/guardian role mapping, and connect trainer workflows to real persisted data.
+Bootstrap and verify the first real trainer account. Create the trainer application User row with role TRAINER, create the matching Identity Platform email/password user, sign in through `/login`, and confirm the Firebase UID binds to the application User. After that, mark Trainer authentication complete and connect Player create/edit plus baseline evaluation to real Cloud SQL persistence.
 
 ## Product behavior and invariants
 
