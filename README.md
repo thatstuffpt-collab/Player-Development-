@@ -188,7 +188,7 @@ Checkboxes may only be marked complete when the result is implemented and verifi
 - [x] Verify GitHub Actions can authenticate to Google Cloud
 - [x] Add automated container build/deploy workflow
 - [x] Verify first automated Cloud Run deployment is fully successful
-- [ ] Validate trainer normal-session UX
+- [x] Validate trainer normal-session UX
 - [ ] Validate new-client/baseline-evaluation UX
 - [ ] Validate reevaluation UX
 - [ ] Finalize MVP parent-visible field set
@@ -215,9 +215,9 @@ Checkboxes may only be marked complete when the result is implemented and verifi
 - [ ] Development goals
 - [ ] Baseline evaluation
 - [ ] Historical reevaluations
-- [ ] Meaningful benchmark/progression event logging
+- [ ] Meaningful benchmark/progression event logging (Quick Log model + prototype created; persistence pending)
 - [ ] Development timeline
-- [ ] Next-session/development focus
+- [ ] Next-session/development focus (session model + prototype created; persistence pending)
 - [ ] Achievements
 - [ ] Assigned workouts
 - [ ] Trainer-private notes
@@ -287,9 +287,25 @@ Every meaningful engineering session must:
 6. never mark work complete based only on intention, code generation, or file existence;
 7. leave the **Next action** below accurate before ending the session.
 
+## Validated normal-session UX
+
+When Shandon opens a player during a training session, the session workspace should prioritize:
+
+1. today's primary training focus: Ball Handling, Finishing, Shooting, Defense, Footwork, Decision Making, Conditioning, or a custom focus;
+2. quick persistent coach-note tags such as "Stronger dribble" or "Clean up footwork";
+3. the current development focus;
+4. the last session's most meaningful result;
+5. active player goals;
+6. today's editable practice-plan outline;
+7. a Quick Log designed to take roughly 10–20 seconds.
+
+Quick Log is for meaningful evidence only, including shooting results, dribbling results, drill progression, goal checks, and important coach observations. Each Quick Log should capture what happened and what it means next: goal met, keep progressing, revisit next session, or change focus.
+
+Persistent coach tags and historical Quick Log evidence are separate concepts. Tags are current reminders; Quick Logs are dated development evidence.
+
 ## Next action
 
-Validate the trainer normal-session UX with Shandon: define what he needs to see when opening a player during a session, what qualifies as a meaningful result worth saving, and the fastest acceptable interaction for recording it. Then use that decision to finalize the first trainer workflow and database migration.
+Validate the new-client/baseline-evaluation UX with Shandon. Define how a new athlete is created, what information is required before the first evaluation, how the first 12-category evaluation should flow on phone/tablet, and how Shandon chooses the initial development focus after the baseline.
 
 ## Product behavior and invariants
 

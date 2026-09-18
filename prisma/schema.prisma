@@ -43,6 +43,33 @@ enum WorkStatus {
   ARCHIVED
 }
 
+enum SessionFocusArea {
+  BALL_HANDLING
+  FINISHING
+  SHOOTING
+  DEFENSE
+  FOOTWORK
+  DECISION_MAKING
+  CONDITIONING
+  OTHER
+}
+
+enum ProgressEventType {
+  SHOOTING_RESULT
+  DRIBBLING_RESULT
+  DRILL_PROGRESSION
+  GOAL_CHECK
+  COACH_OBSERVATION
+  OTHER
+}
+
+enum ProgressNextStep {
+  GOAL_MET
+  KEEP_PROGRESSING
+  REVISIT_NEXT_SESSION
+  CHANGE_FOCUS
+}
+
 model User {
   id              String           @id @default(cuid())
   email           String           @unique
@@ -74,6 +101,8 @@ model Player {
   assignedWork       AssignedWork[]
   trainerNotes       TrainerNote[]
   developmentFocuses DevelopmentFocus[]
+  trainingSessions   TrainingSession[]
+  coachTags          PlayerCoachTag[]
 }
 
 model GuardianPlayer {
@@ -161,18 +190,24 @@ model EvaluationRating {
 }
 
 model ProgressEvent {
-  id          String   @id @default(cuid())
+  id          String            @id @default(cuid())
   playerId    String
-  occurredAt  DateTime @default(now())
+  sessionId   String?
+  occurredAt  DateTime          @default(now())
+  type        ProgressEventType @default(OTHER)
   category    String
   title       String
   result      String
   context     String?
   notes       String?
-  createdAt   DateTime @default(now())
-  player      Player   @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  nextStep    ProgressNextStep?
+  nextTime    String?
+  createdAt   DateTime          @default(now())
+  player      Player            @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  session     TrainingSession?  @relation(fields: [sessionId], references: [id], onDelete: SetNull)
 
   @@index([playerId, occurredAt])
+  @@index([sessionId])
 }
 
 model DevelopmentFocus {
@@ -227,4 +262,48 @@ model TrainerNote {
   player    Player   @relation(fields: [playerId], references: [id], onDelete: Cascade)
 
   @@index([playerId, createdAt])
+}
+
+model PlayerCoachTag {
+  id        String   @id @default(cuid())
+  playerId  String
+  label     String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  player    Player   @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@unique([playerId, label])
+  @@index([playerId, isActive])
+}
+
+model TrainingSession {
+  id               String             @id @default(cuid())
+  playerId         String
+  scheduledFor     DateTime
+  primaryFocus     SessionFocusArea
+  customFocus      String?
+  sessionGoal      String?
+  summary          String?
+  nextSessionFocus String?
+  completedAt      DateTime?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  player           Player             @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  practicePlan     PracticePlanItem[]
+  progressEvents   ProgressEvent[]
+
+  @@index([playerId, scheduledFor])
+}
+
+model PracticePlanItem {
+  id        String          @id @default(cuid())
+  sessionId String
+  sortOrder Int
+  title     String
+  notes     String?
+  completed Boolean         @default(false)
+  session   TrainingSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, sortOrder])
 }
