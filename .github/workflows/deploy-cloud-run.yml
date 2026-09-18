@@ -1,0 +1,81 @@
+name: Deploy to Cloud Run
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "app.py"
+      - "Dockerfile"
+      - ".dockerignore"
+      - ".github/workflows/deploy-cloud-run.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  PROJECT_ID: thats-tuff-player-development
+  REGION: us-central1
+  ARTIFACT_REPOSITORY: player-development
+  SERVICE_NAME: player-development
+  IMAGE_NAME: player-development
+  RUNTIME_SERVICE_ACCOUNT: player-development-runtime@thats-tuff-player-development.iam.gserviceaccount.com
+  CLOUD_SQL_INSTANCE: thats-tuff-player-development:us-central1:player-development-db
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v3
+        with:
+          project_id: ${{ env.PROJECT_ID }}
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
+
+      - name: Set up Google Cloud CLI
+        uses: google-github-actions/setup-gcloud@v3
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker "${REGION}-docker.pkg.dev" --quiet
+
+      - name: Build container
+        run: |
+          IMAGE="${REGION}-docker.pkg.dev/${PROJECT_ID}/${ARTIFACT_REPOSITORY}/${IMAGE_NAME}"
+          docker build             --tag "${IMAGE}:${GITHUB_SHA}"             --tag "${IMAGE}:latest"             .
+
+      - name: Push container
+        run: |
+          IMAGE="${REGION}-docker.pkg.dev/${PROJECT_ID}/${ARTIFACT_REPOSITORY}/${IMAGE_NAME}"
+          docker push "${IMAGE}:${GITHUB_SHA}"
+          docker push "${IMAGE}:latest"
+
+      - name: Deploy to Cloud Run
+        id: deploy
+        uses: google-github-actions/deploy-cloudrun@v3
+        with:
+          service: ${{ env.SERVICE_NAME }}
+          region: ${{ env.REGION }}
+          image: ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.ARTIFACT_REPOSITORY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+          env_vars: |-
+            DB_NAME=player_development
+            DB_USER=player_app
+            CLOUD_SQL_INSTANCE=${{ env.CLOUD_SQL_INSTANCE }}
+          secrets: |-
+            DB_PASSWORD=player-db-password:latest
+          flags: >-
+            --service-account=${{ env.RUNTIME_SERVICE_ACCOUNT }}
+            --add-cloudsql-instances=${{ env.CLOUD_SQL_INSTANCE }}
+            --port=8080
+            --min=0
+            --max=2
+
+      - name: Verify deployed service
+        run: |
+          gcloud run services describe "${SERVICE_NAME}"             --region="${REGION}"             --format="table(metadata.name,status.url,status.latestReadyRevisionName)"
