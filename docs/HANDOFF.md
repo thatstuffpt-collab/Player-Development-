@@ -364,3 +364,21 @@ The approved flow is:
 - separately update the active 2–3 development priorities and short-term goal.
 
 The first production database migration is now the next engineering milestone. Production migrations are automated through a Cloud Run job using the runtime service account, Cloud SQL attachment, and Secret Manager database password. The deploy pipeline must apply migrations successfully before deploying the web service.
+
+
+## First production database migration verified — 2026-09-17
+
+The first Prisma production migration was applied successfully to the real Cloud SQL PostgreSQL database through the automated Cloud Run migration job.
+
+Verified deployment order:
+1. GitHub Actions builds and pushes the container;
+2. the migration Cloud Run job is configured with the runtime service account, Cloud SQL attachment, and Secret Manager DB password;
+3. `prisma migrate deploy` completes successfully;
+4. the web service deploys afterward;
+5. Cloud Run service verification succeeds.
+
+The database now contains the initial MVP schema and the seeded That's Tuff Default Evaluation v1 template with the 12 current evaluation categories.
+
+README Phase 1 items for secure Prisma/Cloud SQL connection and the initial schema/migrations are verified complete.
+
+Next product decision: finalize exactly which player-development fields parents may see versus trainer-only fields, then choose authentication.
