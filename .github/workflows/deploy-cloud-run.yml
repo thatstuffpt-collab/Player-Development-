@@ -105,6 +105,7 @@ jobs:
           flags: >-
             --service-account=${{ env.RUNTIME_SERVICE_ACCOUNT }}
             --add-cloudsql-instances=${{ env.CLOUD_SQL_INSTANCE }}
+            --allow-unauthenticated
             --port=8080
             --min=0
             --max=2
