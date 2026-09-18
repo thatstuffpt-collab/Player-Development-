@@ -138,7 +138,7 @@ These should be added after the recurring-client + parent workflow is stable.
 - Secrets: Google Secret Manager
 - GitHub-to-Google authentication: Workload Identity Federation
 
-Authentication implementation is still to be finalized. It must support secure trainer and parent/guardian access and server-side authorization.
+Authentication implementation: Google Identity Platform / Firebase Authentication for end-user identity, with server-side ID-token verification and application/database authorization. Authentication proves who the user is; the app's own User + GuardianPlayer relationships decide what they may access.
 
 ## Infrastructure
 
@@ -193,7 +193,7 @@ Checkboxes may only be marked complete when the result is implemented and verifi
 - [x] Validate reevaluation UX
 - [x] Finalize MVP parent-visible field set
 - [x] Finalize trainer-private field set
-- [ ] Choose authentication implementation
+- [x] Choose authentication implementation
 
 ### Phase 1 — Real application foundation
 
@@ -349,9 +349,22 @@ Trainer-only by default:
 
 Parent APIs must use an explicit server-side allowlist. UI hiding is not sufficient.
 
+## Authentication decision
+
+Use Google Identity Platform / Firebase Authentication for trainer and parent/guardian sign-in.
+
+Principles:
+- use a managed identity system rather than storing passwords ourselves;
+- support parent-friendly sign-in methods such as email/password or email link, with Google sign-in available where useful;
+- verify Identity Platform/Firebase ID tokens on the server;
+- map the authenticated identity to the application's User record;
+- enforce TRAINER/GUARDIAN/ADMIN roles and GuardianPlayer relationships on the server;
+- keep Cloud Run private until application-level authentication guards are implemented and verified;
+- after guards are verified, make the web service browser-accessible while protected player data remains authorization-gated.
+
 ## Next action
 
-Choose and implement the authentication system, then connect trainer workflows to real persisted data.
+Enable/configure Identity Platform/Firebase Authentication in the Google Cloud project and obtain the web-app configuration. Then implement server-side token verification, trainer/guardian role mapping, and connect trainer workflows to real persisted data.
 
 ## Product behavior and invariants
 
