@@ -1,5 +1,5 @@
 import type { UserRole } from "@/generated/prisma/enums";
-import { prisma } from "@/lib/db";
+import { getPrisma } from "@/lib/db";
 import { firebaseAdminAuth } from "@/lib/firebase/admin";
 
 export class AuthError extends Error {
@@ -38,6 +38,7 @@ export async function requireAppUser(
     throw new AuthError("This account does not have an email address.", 403);
   }
 
+  const prisma = getPrisma();
   let user = await prisma.user.findFirst({
     where: {
       OR: [{ firebaseUid: decoded.uid }, { email }],
