@@ -411,3 +411,26 @@ Trainer-only by default:
 A server-side Prisma allowlist now defines the parent player view. Parent privacy must never rely only on hiding UI fields.
 
 ProgressEvent now has parentVisible=false by default. A follow-up production migration adds this field.
+
+
+## Authentication implementation chosen — 2026-09-17
+
+The MVP authentication system is Google Identity Platform / Firebase Authentication.
+
+Reasoning:
+- the app needs end-user parent/guardian accounts, not only internal Google Cloud IAM users;
+- Cloud Run's documented end-user pattern supports Identity Platform/Firebase Authentication;
+- credentials/password handling should remain with a managed identity service rather than the application;
+- the application still owns authorization.
+
+Authentication proves identity. Authorization remains application-controlled through the User.role and GuardianPlayer relationships.
+
+Planned model:
+1. web client signs in through Identity Platform/Firebase Authentication;
+2. client receives an ID token;
+3. server verifies the ID token;
+4. verified identity maps to the app User row;
+5. trainer/guardian/admin role checks and GuardianPlayer ownership determine access;
+6. parent-facing queries use the explicit parent-safe Prisma allowlist.
+
+Do not make the production Cloud Run service unauthenticated/public until the application-level auth guard and negative-path authorization tests are in place.
