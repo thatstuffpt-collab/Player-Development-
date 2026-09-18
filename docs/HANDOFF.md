@@ -382,3 +382,32 @@ The database now contains the initial MVP schema and the seeded That's Tuff Defa
 README Phase 1 items for secure Prisma/Cloud SQL connection and the initial schema/migrations are verified complete.
 
 Next product decision: finalize exactly which player-development fields parents may see versus trainer-only fields, then choose authentication.
+
+
+## Parent / trainer privacy boundary approved — 2026-09-17
+
+Shandon approved the proposed parent-visible versus trainer-only split.
+
+Parent-visible by default:
+- player basics needed for the development dashboard (name, preferred name, class year, height, position, school/team);
+- goals;
+- current/historical development focus;
+- formal evaluation ratings/history and parent-safe evaluation summary/plan fields;
+- achievements;
+- assigned work;
+- Quick Logs only when the trainer explicitly marks them Parent Visible.
+
+Trainer-only by default:
+- TrainerNote records;
+- PlayerCoachTag records;
+- DOB and intake context not needed for the parent dashboard;
+- self-reported needs / playing-experience notes;
+- training limitations;
+- practice plans and internal training-session planning;
+- evaluation observation tags, evidence, internal notes, and rating-change explanation;
+- ProgressEvent internal context/notes/next-time reminder;
+- all Quick Logs unless explicitly marked Parent Visible.
+
+A server-side Prisma allowlist now defines the parent player view. Parent privacy must never rely only on hiding UI fields.
+
+ProgressEvent now has parentVisible=false by default. A follow-up production migration adds this field.

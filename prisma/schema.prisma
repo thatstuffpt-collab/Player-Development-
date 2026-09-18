@@ -209,6 +209,7 @@ model ProgressEvent {
   notes       String?
   nextStep    ProgressNextStep?
   nextTime    String?
+  parentVisible Boolean           @default(false)
   createdAt   DateTime          @default(now())
   player      Player            @relation(fields: [playerId], references: [id], onDelete: Cascade)
   session     TrainingSession?  @relation(fields: [sessionId], references: [id], onDelete: SetNull)
