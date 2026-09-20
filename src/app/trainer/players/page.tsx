@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { authenticatedFetch } from "@/lib/authenticated-fetch";
 
 type PlayerListItem = {
@@ -16,28 +17,33 @@ type PlayerListItem = {
 };
 
 export default function PlayersPage() {
+  const router = useRouter();
   const [players, setPlayers] = useState<PlayerListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [creating, setCreating] = useState(false);
   const [showForm, setShowForm] = useState(false);
 
-  async function loadPlayers() {
-    try {
-      setLoading(true);
-      const response = await authenticatedFetch("/api/trainer/players");
-      const payload = await response.json();
-      if (!response.ok) throw new Error(payload.error ?? "Could not load players.");
-      setPlayers(payload.players);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not load players.");
-    } finally {
-      setLoading(false);
-    }
-  }
-
   useEffect(() => {
+    let cancelled = false;
+
+    async function loadPlayers() {
+      try {
+        const response = await authenticatedFetch("/api/trainer/players");
+        const payload = await response.json();
+        if (!response.ok) throw new Error(payload.error ?? "Could not load players.");
+        if (!cancelled) setPlayers(payload.players);
+      } catch (err) {
+        if (!cancelled) setError(err instanceof Error ? err.message : "Could not load players.");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
     void loadPlayers();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   async function createPlayer(event: FormEvent<HTMLFormElement>) {
@@ -56,7 +62,7 @@ export default function PlayersPage() {
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.error ?? "Could not create player.");
 
-      window.location.href = `/trainer/players/${payload.player.id}`;
+      router.push(`/trainer/players/${payload.player.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not create player.");
       setCreating(false);
