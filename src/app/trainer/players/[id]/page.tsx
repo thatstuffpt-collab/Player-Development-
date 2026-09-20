@@ -36,19 +36,29 @@ export default function PlayerProfilePage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
-  async function loadPlayer() {
-    try {
-      const response = await authenticatedFetch(`/api/trainer/players/${params.id}`);
-      const payload = await response.json();
-      if (!response.ok) throw new Error(payload.error ?? "Could not load player.");
-      setPlayer(payload.player);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not load player.");
-    }
+  async function fetchPlayer(): Promise<PlayerDetail> {
+    const response = await authenticatedFetch(`/api/trainer/players/${params.id}`);
+    const payload = await response.json();
+    if (!response.ok) throw new Error(payload.error ?? "Could not load player.");
+    return payload.player;
   }
 
   useEffect(() => {
+    let cancelled = false;
+
+    async function loadPlayer() {
+      try {
+        const nextPlayer = await fetchPlayer();
+        if (!cancelled) setPlayer(nextPlayer);
+      } catch (err) {
+        if (!cancelled) setError(err instanceof Error ? err.message : "Could not load player.");
+      }
+    }
+
     void loadPlayer();
+    return () => {
+      cancelled = true;
+    };
   }, [params.id]);
 
   async function saveProfile(event: FormEvent<HTMLFormElement>) {
@@ -64,7 +74,8 @@ export default function PlayerProfilePage() {
       });
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.error ?? "Could not save player.");
-      await loadPlayer();
+      const refreshedPlayer = await fetchPlayer();
+      setPlayer(refreshedPlayer);
       setEditing(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not save player.");
