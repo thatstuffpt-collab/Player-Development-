@@ -49,6 +49,7 @@ export default function SessionWorkflowPreviewPage() {
       next: "Keep progressing",
     },
   ]);
+  const [editingLog, setEditingLog] = useState<QuickLog | null>(null);
   const [takeaway, setTakeaway] = useState("Pull-up balance improved, especially from the wing and top.");
   const [needsWork, setNeedsWork] = useState("Clean up drift on right-side pull-ups and stay under control late in reps.");
   const [nextFocus, setNextFocus] = useState("Continue pull-up balance work and progress into more game-speed reads.");
@@ -87,6 +88,29 @@ export default function SessionWorkflowPreviewPage() {
       { id: Date.now(), sectionId, section, type, drill, spot, result, note, next },
     ]);
     form.reset();
+  }
+
+  function saveEditedLog(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!editingLog) return;
+    const data = new FormData(event.currentTarget);
+    const sectionId = Number(data.get("sectionId"));
+    const section = plan.find((item) => item.id === sectionId)?.title ?? "Session";
+    const updated: QuickLog = {
+      ...editingLog,
+      sectionId,
+      section,
+      type: String(data.get("type") ?? editingLog.type),
+      drill: String(data.get("drill") ?? "").trim(),
+      spot: String(data.get("spot") ?? "").trim(),
+      result: String(data.get("result") ?? "").trim(),
+      note: String(data.get("note") ?? "").trim(),
+      next: String(data.get("next") ?? editingLog.next),
+    };
+
+    if (!updated.result && !updated.note) return;
+    setLogs((current) => current.map((log) => (log.id === updated.id ? updated : log)));
+    setEditingLog(null);
   }
 
   function suggestWrapUp() {
@@ -230,14 +254,41 @@ export default function SessionWorkflowPreviewPage() {
           </section>
 
           <section className={styles.panel}>
-            <div className={styles.sectionHeading}><div><span>SESSION FEED</span><h2>What you&apos;ve logged</h2></div></div>
+            <div className={styles.sectionHeading}><div><span>SESSION FEED</span><h2>What you&apos;ve logged</h2></div><small>Tap Edit to correct any entry</small></div>
             <div className={styles.feed}>
               {logs.map((log) => (
                 <article key={log.id}>
-                  <div><span>{log.section} · {log.type}</span><strong>{log.drill || "General note"}{log.spot ? ` · ${log.spot}` : ""}</strong></div>
-                  {log.result && <b>{log.result}</b>}
-                  {log.note && <p>{log.note}</p>}
-                  <small>{log.next}</small>
+                  {editingLog?.id === log.id ? (
+                    <form className={styles.quickForm} onSubmit={saveEditedLog}>
+                      <label>Section
+                        <select name="sectionId" defaultValue={editingLog.sectionId}>{plan.map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}</select>
+                      </label>
+                      <label>Log type
+                        <select name="type" defaultValue={editingLog.type}><option>Drill result</option><option>Coach observation</option><option>Goal progress</option><option>Body/readiness update</option></select>
+                      </label>
+                      <label>Drill<input name="drill" defaultValue={editingLog.drill} /></label>
+                      <label>Spot / side<input name="spot" defaultValue={editingLog.spot} /></label>
+                      <label>Result<input name="result" defaultValue={editingLog.result} /></label>
+                      <label>What does it mean next?
+                        <select name="next" defaultValue={editingLog.next}><option>Keep progressing</option><option>Revisit next session</option><option>Goal met</option><option>Change focus</option></select>
+                      </label>
+                      <label className={styles.full}>Coach note<textarea name="note" rows={3} defaultValue={editingLog.note} /></label>
+                      <div className={`${styles.full} ${styles.actionsRow}`}>
+                        <button onClick={() => setEditingLog(null)} type="button">Cancel</button>
+                        <button className={styles.primary} type="submit">Save changes</button>
+                      </div>
+                    </form>
+                  ) : (
+                    <>
+                      <div><span>{log.section} · {log.type}</span><strong>{log.drill || "General note"}{log.spot ? ` · ${log.spot}` : ""}</strong></div>
+                      {log.result && <b>{log.result}</b>}
+                      {log.note && <p>{log.note}</p>}
+                      <small>{log.next}</small>
+                      <div className={styles.actionsRow}>
+                        <button onClick={() => setEditingLog({ ...log })} type="button">Edit Quick Log</button>
+                      </div>
+                    </>
+                  )}
                 </article>
               ))}
             </div>
