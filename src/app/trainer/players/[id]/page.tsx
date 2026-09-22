@@ -115,6 +115,7 @@ export default function PlayerProfilePage() {
           </p>
         </div>
         <div className="profile-actions">
+          <Link className="primary-link-button" href={`/trainer/players/${player.id}/session`}>Start Session</Link>
           <button className="ghost-button" type="button" onClick={() => setEditing((value) => !value)}>{editing ? "Close edit" : "Edit profile"}</button>
           <Link className="primary-link-button" href={`/trainer/evaluation/new?playerId=${player.id}`}>Baseline evaluation</Link>
         </div>
