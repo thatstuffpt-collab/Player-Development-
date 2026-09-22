@@ -54,12 +54,18 @@ enum SessionFocusArea {
   OTHER
 }
 
+enum PracticePlanItemType {
+  SECTION
+  DRILL
+}
+
 enum ProgressEventType {
   SHOOTING_RESULT
   DRIBBLING_RESULT
   DRILL_PROGRESSION
   GOAL_CHECK
   COACH_OBSERVATION
+  BODY_READINESS
   OTHER
 }
 
@@ -198,25 +204,29 @@ model EvaluationRating {
 }
 
 model ProgressEvent {
-  id            String            @id @default(cuid())
-  playerId      String
-  sessionId     String?
-  occurredAt    DateTime          @default(now())
-  type          ProgressEventType @default(OTHER)
-  category      String
-  title         String
-  result        String
-  context       String?
-  notes         String?
-  nextStep      ProgressNextStep?
-  nextTime      String?
-  parentVisible Boolean           @default(false)
-  createdAt     DateTime          @default(now())
-  player        Player            @relation(fields: [playerId], references: [id], onDelete: Cascade)
-  session       TrainingSession?  @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+  id                 String            @id @default(cuid())
+  playerId           String
+  sessionId          String?
+  practicePlanItemId String?
+  occurredAt         DateTime          @default(now())
+  type               ProgressEventType @default(OTHER)
+  category           String
+  title              String
+  result             String
+  spot                String?
+  context            String?
+  notes              String?
+  nextStep           ProgressNextStep?
+  nextTime           String?
+  parentVisible      Boolean           @default(false)
+  createdAt          DateTime          @default(now())
+  player             Player            @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  session            TrainingSession?  @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+  practicePlanItem   PracticePlanItem? @relation(fields: [practicePlanItemId], references: [id], onDelete: SetNull)
 
   @@index([playerId, occurredAt])
   @@index([sessionId])
+  @@index([practicePlanItemId])
 }
 
 model DevelopmentFocus {
@@ -287,32 +297,44 @@ model PlayerCoachTag {
 }
 
 model TrainingSession {
-  id               String             @id @default(cuid())
-  playerId         String
-  scheduledFor     DateTime
-  primaryFocus     SessionFocusArea
-  customFocus      String?
-  sessionGoal      String?
-  summary          String?
-  nextSessionFocus String?
-  completedAt      DateTime?
-  createdAt        DateTime           @default(now())
-  updatedAt        DateTime           @updatedAt
-  player           Player             @relation(fields: [playerId], references: [id], onDelete: Cascade)
-  practicePlan     PracticePlanItem[]
-  progressEvents   ProgressEvent[]
+  id                   String             @id @default(cuid())
+  playerId             String
+  scheduledFor         DateTime
+  primaryFocus         SessionFocusArea
+  customFocus          String?
+  sessionGoal          String?
+  sorenessLevel        String?
+  bodyArea             String?
+  discomfortLevel      Int?
+  planAdjustmentReason String?
+  summary              String?
+  needsMoreWork        String?
+  nextSessionFocus     String?
+  completedAt          DateTime?
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+  player               Player             @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  practicePlan         PracticePlanItem[]
+  progressEvents       ProgressEvent[]
 
   @@index([playerId, scheduledFor])
 }
 
 model PracticePlanItem {
-  id        String          @id @default(cuid())
-  sessionId String
-  sortOrder Int
-  title     String
-  notes     String?
-  completed Boolean         @default(false)
-  session   TrainingSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  id             String               @id @default(cuid())
+  sessionId      String
+  parentItemId   String?
+  itemType       PracticePlanItemType  @default(DRILL)
+  focusArea      SessionFocusArea?
+  sortOrder      Int
+  title          String
+  notes          String?
+  completed      Boolean              @default(false)
+  session        TrainingSession      @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  parentItem     PracticePlanItem?     @relation("PracticePlanHierarchy", fields: [parentItemId], references: [id], onDelete: Cascade)
+  childItems     PracticePlanItem[]    @relation("PracticePlanHierarchy")
+  progressEvents ProgressEvent[]
 
-  @@unique([sessionId, sortOrder])
+  @@index([sessionId, sortOrder])
+  @@index([parentItemId])
 }

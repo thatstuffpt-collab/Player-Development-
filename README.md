@@ -176,8 +176,9 @@ These routes are intentionally safe to open without a login because they contain
 - Training session sample: `/preview/session`
 - New-athlete baseline sample: `/preview/baseline`
 - Reevaluation sample: `/preview/reevaluation`
+- Interactive coaching workflow: `/preview/session-workflow`
 
-Real trainer routes live under `/trainer/*` and are gated by Firebase authentication. The auth foundation is implemented, but Trainer authentication is not considered complete until the first real trainer account signs in successfully and is verified against the application User record.
+Real trainer routes live under `/trainer/*` and are gated by Firebase authentication. The first real trainer sign-in has been verified end-to-end against the application User record.
 
 ## Delivery roadmap
 
@@ -206,6 +207,7 @@ Checkboxes may only be marked complete when the result is implemented and verifi
 - [x] Validate trainer normal-session UX
 - [x] Validate new-client/baseline-evaluation UX
 - [x] Validate reevaluation UX
+- [x] Validate detailed session workflow UX (readiness -> Section/Drill plan -> Quick Log -> wrap-up)
 - [x] Finalize MVP parent-visible field set
 - [x] Finalize trainer-private field set
 - [x] Choose authentication implementation
@@ -217,7 +219,8 @@ Checkboxes may only be marked complete when the result is implemented and verifi
 - [x] Connect Prisma securely to Cloud SQL
 - [x] Create initial database schema and migrations
 - [x] Add local development configuration with no committed secrets
-- [ ] Add automated tests and CI checks
+- [x] Add CI checks for lint, typecheck, and production build
+- [ ] Add automated application/domain tests
 - [x] Add production health/readiness endpoint
 - [x] Verify Next.js application deploys successfully to Cloud Run
 - [x] Add Firebase/Identity Platform auth foundation and server-side ID-token verification
@@ -225,16 +228,16 @@ Checkboxes may only be marked complete when the result is implemented and verifi
 
 ### Phase 2 — Trainer core workflow
 
-- [ ] Trainer authentication (foundation implemented; first real trainer login verification pending)
-- [ ] Player create/edit/archive
-- [ ] Player profile
-- [ ] Big-picture goals
-- [ ] Development goals
-- [ ] Baseline evaluation
+- [x] Trainer authentication
+- [ ] Player create/edit/archive (create verified; edit/archive implemented, hands-on verification pending)
+- [x] Player profile
+- [x] Big-picture goals
+- [x] Development goals
+- [x] Baseline evaluation
 - [ ] Historical reevaluations
-- [ ] Meaningful benchmark/progression event logging (Quick Log model + prototype created; persistence pending)
+- [ ] Meaningful benchmark/progression event logging (real persistence implementation in PR #20; CI/deployment verification pending)
 - [ ] Development timeline
-- [ ] Next-session/development focus (session model + prototype created; persistence pending)
+- [ ] Next-session/development focus (real session persistence implementation in PR #20; CI/deployment verification pending)
 - [ ] Achievements
 - [ ] Assigned workouts
 - [ ] Trainer-private notes
@@ -264,7 +267,7 @@ Checkboxes may only be marked complete when the result is implemented and verifi
 - [ ] Verify server-side authorization rather than UI-only hiding
 - [ ] Verify mobile trainer workflow with a real training scenario
 - [ ] Verify laptop/tablet evaluation workflow
-- [ ] Verify deployed Cloud Run app uses Cloud SQL and Secret Manager correctly
+- [x] Verify deployed Cloud Run app uses Cloud SQL and Secret Manager correctly
 - [ ] Complete basic backup/recovery procedure
 - [ ] Complete production privacy/consent decisions required for real minor data
 - [ ] Shandon performs final MVP acceptance walkthrough
@@ -318,6 +321,8 @@ When Shandon opens a player during a training session, the session workspace sho
 
 Quick Log is for meaningful evidence only, including shooting results, dribbling results, drill progression, goal checks, and important coach observations. Each Quick Log should capture what happened and what it means next: goal met, keep progressing, revisit next session, or change focus.
 
+The validated detailed session workflow uses flexible **Section -> Drill** practice plans. Quick Log pulls drills from the selected section instead of requiring repeated typing. Shooting drills expose a court-spot selector. Improvised drills can still be added on the fly. Saved Quick Logs must remain editable so data can be corrected.
+
 Persistent coach tags and historical Quick Log evidence are separate concepts. Tags are current reminders; Quick Logs are dated development evidence.
 
 ## Validated baseline-evaluation UX
@@ -341,6 +346,10 @@ A reevaluation prototype now follows the existing historical-data rules:
 5. finish by keeping, removing, or replacing the athlete's top 2–3 priorities and updating the short-term goal;
 6. save the result as a brand-new evaluation and update the active development plan separately.
 
+## Future external / camp evaluation workflow
+
+After the recurring-client trainer workflow is stable, add an external/camp evaluation path that does not require a full recurring-client profile. It should reuse the same evaluation structure and rating system, support fast camp-style entry, generate a branded PDF that can be downloaded or emailed, preserve a lightweight evaluation record, and allow that history to be attached to a full player profile if the athlete later becomes a recurring client.
+
 ## Parent / trainer privacy boundary
 
 Parent-visible by default:
@@ -359,6 +368,7 @@ Trainer-only by default:
 - intake/self-reported needs and playing-experience notes;
 - training limitations;
 - practice plans and internal session planning;
+- readiness/body-check information;
 - evaluation observation tags;
 - evaluation evidence/internal notes and rating-change explanation;
 - ProgressEvent context, internal notes, and next-time coaching reminder;
@@ -377,11 +387,12 @@ Current implementation:
 - the first successful authorized login may bind an invited User row to that Firebase UID;
 - server authorization still uses application roles and GuardianPlayer relationships;
 - protected APIs must require a verified ID token;
+- Shandon's real trainer login has been verified end-to-end;
 - sample `/preview/*` routes contain fake data only and remain intentionally public.
 
 ## Next action
 
-Bootstrap and verify the first real trainer account. Create the trainer application User row with role TRAINER, create the matching Identity Platform email/password user, sign in through `/login`, and confirm the Firebase UID binds to the application User. After that, mark Trainer authentication complete and connect Player create/edit plus baseline evaluation to real Cloud SQL persistence.
+Fix the remaining PR #20 lint failure in the real player session workspace, rerun CI, then merge and deploy the session-persistence migration/workflow. After deployment, Shandon should complete a real-player acceptance test covering readiness, Section -> Drill plan entry, Quick Log create/edit, shooting spot selection, wrap-up, reload/persistence, and next-session focus.
 
 ## Product behavior and invariants
 
@@ -390,6 +401,7 @@ Bootstrap and verify the first real trainer account. Create the trainer applicat
 - Historical evaluations must never be silently overwritten.
 - Historical benchmark/progress results must remain attributable to date/session/context.
 - Trainer-private notes must never be exposed to parents.
+- Readiness/body-check information is trainer-only by default and is coaching context, not a medical diagnosis.
 - UI hiding is not authorization.
 - Camp history should eventually remain attached to the same player identity if a camp participant becomes a recurring client.
 - Progress views must derive from historical records rather than mutable current fields alone.
