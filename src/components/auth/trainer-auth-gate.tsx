@@ -1,7 +1,7 @@
 "use client";
 
 import { onAuthStateChanged } from "firebase/auth";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { ReactNode, useEffect, useState } from "react";
 import { firebaseAuth } from "@/lib/firebase/client";
 
@@ -9,13 +9,14 @@ type AuthState = "checking" | "authorized" | "denied";
 
 export function TrainerAuthGate({ children }: { children: ReactNode }) {
   const router = useRouter();
+  const pathname = usePathname();
   const [state, setState] = useState<AuthState>("checking");
   const [message, setMessage] = useState("");
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(firebaseAuth, async (firebaseUser) => {
       if (!firebaseUser) {
-        router.replace("/login?next=/trainer/session");
+        router.replace(`/login?next=${encodeURIComponent(pathname || "/trainer/players")}`);
         return;
       }
 
@@ -47,7 +48,7 @@ export function TrainerAuthGate({ children }: { children: ReactNode }) {
     });
 
     return unsubscribe;
-  }, [router]);
+  }, [pathname, router]);
 
   if (state === "checking") {
     return (
