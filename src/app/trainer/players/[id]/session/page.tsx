@@ -105,7 +105,7 @@ export default function RealPlayerSessionPage() {
   const [discomfort, setDiscomfort] = useState(0);
   const [adjustmentReason, setAdjustmentReason] = useState("");
   const [selectedSectionId, setSelectedSectionId] = useState<number>(starterPlan[0].id);
-  const [selectedDrillId, setSelectedDrillId] = useState("");\n  const [selectedSavedSectionId, setSelectedSavedSectionId] = useState("");
+  const [selectedDrillId, setSelectedDrillId] = useState("");
   const [customDrill, setCustomDrill] = useState("");
   const [logType, setLogType] = useState("Drill result");
   const [selectedGoal, setSelectedGoal] = useState("");
@@ -148,7 +148,7 @@ export default function RealPlayerSessionPage() {
   const activeSection = plan.find((item) => item.id === selectedSectionId) ?? plan[0];
   const sessionPlan = session?.practicePlan ?? [];
   const sessionSections = sessionPlan.filter((item) => item.itemType === "SECTION");
-  const selectedSavedSection = sessionSections.find((item) => item.id === selectedSavedSectionId) ?? sessionSections.find((item) => item.title === activeSection?.title) ?? sessionSections[0];
+  const selectedSavedSection = sessionSections.find((item) => item.title === activeSection?.title) ?? sessionSections[0];
   const savedDrills = sessionPlan.filter((item) => item.itemType === "DRILL" && item.parentItemId === selectedSavedSection?.id);
   const selectedSavedDrill = savedDrills.find((item) => item.id === selectedDrillId);
 
