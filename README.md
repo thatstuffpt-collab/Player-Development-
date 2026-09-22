@@ -392,7 +392,7 @@ Current implementation:
 
 ## Next action
 
-Fix the remaining PR #20 lint failure in the real player session workspace, rerun CI, then merge and deploy the session-persistence migration/workflow. After deployment, Shandon should complete a real-player acceptance test covering readiness, Section -> Drill plan entry, Quick Log create/edit, shooting spot selection, wrap-up, reload/persistence, and next-session focus.
+Deploy and acceptance-test the Results + Athletic Testing batch. The player profile now separates objective athletic testing from basketball Quick Log trends, preserves repeat test history, shows first/latest/best measurements and simple progress trends, supports custom athletic tests, adds permanent deletion for test/duplicate player records while retaining Archive for real client history, and fixes custom session sections so newly added sections are selectable in Quick Log. After deployment, test one basketball session plus at least two entries for the same athletic test to verify longitudinal progress.
 
 ## Product behavior and invariants
 
