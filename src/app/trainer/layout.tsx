@@ -7,7 +7,7 @@ export default function TrainerLayout({ children }: { children: ReactNode }) {
   return (
     <TrainerAuthGate>
       <nav className="trainer-nav" aria-label="Trainer navigation">
-        <Link className="trainer-brand" href="/trainer/players">THAT&apos;S TUFF</Link>
+        <Link className="trainer-brand" href="/trainer/today">THAT&apos;S TUFF</Link>
         <div className="trainer-nav-links">
           <Link href="/trainer/players">Players</Link>
           <Link href="/trainer/players#start-session">Sessions</Link>
