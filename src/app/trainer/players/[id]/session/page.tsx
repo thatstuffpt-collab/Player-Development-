@@ -97,7 +97,8 @@ export default function RealPlayerSessionPage() {
   const [player, setPlayer] = useState<WorkspacePlayer | null>(null);
   const [session, setSession] = useState<SessionRecord | null>(null);
   const [step, setStep] = useState<"before" | "during" | "wrap">("before");
-  const [plan, setPlan] = useState<PlanSection[]>(starterPlan);\n  const [sessionType, setSessionType] = useState("Basketball Skills");
+  const [plan, setPlan] = useState<PlanSection[]>(starterPlan);
+  const [sessionType, setSessionType] = useState("Basketball Skills");
   const [soreness, setSoreness] = useState("None");
   const [bodyArea, setBodyArea] = useState("");
   const [discomfort, setDiscomfort] = useState(0);
