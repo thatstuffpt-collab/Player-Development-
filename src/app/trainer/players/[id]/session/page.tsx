@@ -53,6 +53,14 @@ const shootingSpots = [
   "Right Short Corner", "Left Short Corner", "Right Elbow", "Left Elbow", "Paint / Rim", "Custom",
 ];
 
+const athleticPlan: PlanSection[] = [
+  { id: 101, title: "Movement Prep", notes: "Warm up hips, knees, ankles and movement patterns", drills: [{ title: "QKC + dynamic movement prep", notes: "" }] },
+  { id: 102, title: "Speed & Agility", notes: "Acceleration, deceleration, change of direction", drills: [{ title: "Acceleration / change-of-direction work", notes: "" }] },
+  { id: 103, title: "Vertical & Power", notes: "Jump mechanics and explosive output", drills: [{ title: "Jump / power progression", notes: "" }] },
+  { id: 104, title: "Strength", notes: "Strength movement for today's goal", drills: [{ title: "Strength progression", notes: "" }] },
+  { id: 105, title: "Conditioning", notes: "Game-ready work capacity", focusArea: "CONDITIONING", drills: [{ title: "Conditioning progression", notes: "", focusArea: "CONDITIONING" }] },
+];
+
 const starterPlan: PlanSection[] = [
   { id: 1, title: "Warm-up", notes: "Prep the body and basketball movement", drills: [{ title: "QKC + movement prep", notes: "" }] },
   { id: 2, title: "Ball Handling", notes: "Pace, stance, control", drills: [{ title: "Pound dribble series", notes: "" }, { title: "Change of direction series", notes: "" }] },
@@ -90,6 +98,7 @@ export default function RealPlayerSessionPage() {
   const [session, setSession] = useState<SessionRecord | null>(null);
   const [step, setStep] = useState<"before" | "during" | "wrap">("before");
   const [plan, setPlan] = useState<PlanSection[]>(starterPlan);
+  const [sessionType, setSessionType] = useState("Basketball Skills");
   const [soreness, setSoreness] = useState("None");
   const [bodyArea, setBodyArea] = useState("");
   const [discomfort, setDiscomfort] = useState(0);
@@ -141,6 +150,14 @@ export default function RealPlayerSessionPage() {
   const selectedSavedSection = sessionSections.find((item) => item.title === activeSection?.title) ?? sessionSections[0];
   const savedDrills = sessionPlan.filter((item) => item.itemType === "DRILL" && item.parentItemId === selectedSavedSection?.id);
   const selectedSavedDrill = savedDrills.find((item) => item.id === selectedDrillId);
+
+  function chooseSessionType(value: string) {
+    setSessionType(value);
+    if (value === "Athletic Performance") setPlan(athleticPlan);
+    else if (value === "Combined") setPlan([...starterPlan, ...athleticPlan.map((section, index) => ({ ...section, id: 200 + index }))]);
+    else setPlan(starterPlan);
+    setSelectedSectionId(value === "Athletic Performance" ? athleticPlan[0].id : starterPlan[0].id);
+  }
 
   function addSection() {
     const id = Date.now();
