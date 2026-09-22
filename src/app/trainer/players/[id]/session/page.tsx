@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { authenticatedFetch } from "@/lib/authenticated-fetch";
 import styles from "./session.module.css";
 
@@ -93,7 +93,7 @@ async function fetchWorkspace(playerId: string): Promise<WorkspacePlayer> {
 }
 
 export default function RealPlayerSessionPage() {
-  const params = useParams<{ id: string }>();
+  const params = useParams<{ id: string }>();\n  const router = useRouter();
   const [player, setPlayer] = useState<WorkspacePlayer | null>(null);
   const [session, setSession] = useState<SessionRecord | null>(null);
   const [step, setStep] = useState<"before" | "during" | "wrap">("before");
