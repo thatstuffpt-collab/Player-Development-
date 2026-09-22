@@ -114,6 +114,7 @@ model Player {
   developmentFocuses  DevelopmentFocus[]
   trainingSessions    TrainingSession[]
   coachTags           PlayerCoachTag[]
+  athleticTests       AthleticTest[]
 }
 
 model GuardianPlayer {
@@ -337,4 +338,23 @@ model PracticePlanItem {
 
   @@index([sessionId, sortOrder])
   @@index([parentItemId])
+}
+
+
+model AthleticTest {
+  id         String   @id @default(cuid())
+  playerId   String
+  category   String
+  testKey    String
+  testName   String
+  value      Float
+  unit       String
+  lowerIsBetter Boolean @default(false)
+  notes      String?
+  testedAt   DateTime @default(now())
+  createdAt  DateTime @default(now())
+  player     Player   @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@index([playerId, testedAt])
+  @@index([playerId, testKey])
 }
