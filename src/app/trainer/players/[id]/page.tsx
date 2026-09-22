@@ -19,7 +19,7 @@ type PlayerDetail = {
   playingExperience: string | null;
   selfReportedNeeds: string | null;
   trainingLimitations: string | null;
-  goals: Array<{ id: string; title: string; type: string; status: string }>;
+  goals: Array<{ id: string; title: string; type: string; status: string; completedAt?: string | null }>;
   developmentFocuses: Array<{ id: string; focus: string; completedAt: string | null }>;
   evaluations: Array<{ id: string; evaluatedAt: string; priorityAreas: string[]; shortTermGoal: string | null }>;
   achievements: Array<{ id: string; title: string; achievedAt: string }>;
@@ -34,7 +34,7 @@ export default function PlayerProfilePage() {
   const [player, setPlayer] = useState<PlayerDetail | null>(null);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState("");\n  const [newGoal, setNewGoal] = useState("");\n  const [newTag, setNewTag] = useState("");\n  const [newNote, setNewNote] = useState("");
 
   async function fetchPlayer(): Promise<PlayerDetail> {
     const response = await authenticatedFetch(`/api/trainer/players/${params.id}`);
@@ -84,6 +84,38 @@ export default function PlayerProfilePage() {
     }
   }
 
+  async function playerAction(body: Record<string, unknown>) {
+    setError("");
+    const response = await authenticatedFetch(`/api/trainer/players/${params.id}`, { method: "PATCH", body: JSON.stringify(body) });
+    const payload = await response.json();
+    if (!response.ok) throw new Error(payload.error ?? "Could not save change.");
+    setPlayer(await fetchPlayer());
+  }
+
+  async function addGoal() {
+    if (!newGoal.trim()) return;
+    try { await playerAction({ action: "addGoal", title: newGoal, type: "DEVELOPMENT" }); setNewGoal(""); }
+    catch (err) { setError(err instanceof Error ? err.message : "Could not add goal."); }
+  }
+  async function completeGoal(goalId: string) {
+    try { await playerAction({ action: "completeGoal", goalId }); }
+    catch (err) { setError(err instanceof Error ? err.message : "Could not complete goal."); }
+  }
+  async function addTag() {
+    if (!newTag.trim()) return;
+    try { await playerAction({ action: "addTag", label: newTag }); setNewTag(""); }
+    catch (err) { setError(err instanceof Error ? err.message : "Could not add tag."); }
+  }
+  async function removeTag(tagId: string) {
+    try { await playerAction({ action: "removeTag", tagId }); }
+    catch (err) { setError(err instanceof Error ? err.message : "Could not remove tag."); }
+  }
+  async function addNote() {
+    if (!newNote.trim()) return;
+    try { await playerAction({ action: "addNote", body: newNote }); setNewNote(""); }
+    catch (err) { setError(err instanceof Error ? err.message : "Could not add note."); }
+  }
+
   async function archivePlayer() {
     if (!window.confirm("Archive this player? Their history will stay in the database.")) return;
     const response = await authenticatedFetch(`/api/trainer/players/${params.id}`, { method: "DELETE" });
@@ -117,7 +149,7 @@ export default function PlayerProfilePage() {
         <div className="profile-actions">
           <Link className="primary-link-button" href={`/trainer/players/${player.id}/session`}>Start Session</Link>
           <button className="ghost-button" type="button" onClick={() => setEditing((value) => !value)}>{editing ? "Close edit" : "Edit profile"}</button>
-          <Link className="primary-link-button" href={`/trainer/evaluation/new?playerId=${player.id}`}>Baseline evaluation</Link>
+          <Link className="primary-link-button" href={`/trainer/evaluation/new?playerId=${player.id}`}>{player.evaluations.length ? "Evaluation history" : "Baseline evaluation"}</Link>
         </div>
       </header>
 
@@ -169,12 +201,15 @@ export default function PlayerProfilePage() {
       <section className="profile-content-grid">
         <article className="session-card">
           <div className="section-heading"><div><span className="section-kicker">GOALS</span><h2>Current goals</h2></div></div>
-          {player.goals.length ? player.goals.slice(0,5).map((goal) => <div className="profile-list-row" key={goal.id}><strong>{goal.title}</strong><span>{goal.type.replaceAll("_", " ")} · {goal.status}</span></div>) : <p className="support-copy">No goals yet.</p>}
+          <div className="profile-inline-form"><input value={newGoal} onChange={(e) => setNewGoal(e.target.value)} placeholder="Add a new goal..." /><button className="primary-button" type="button" onClick={addGoal}>Add Goal</button></div>
+          {player.goals.filter((goal) => goal.status === "ACTIVE").length ? player.goals.filter((goal) => goal.status === "ACTIVE").map((goal) => <div className="profile-list-row profile-action-row" key={goal.id}><div><strong>{goal.title}</strong><span>{goal.type.replaceAll("_", " ")}</span></div><button className="ghost-button" type="button" onClick={() => completeGoal(goal.id)}>✓ Complete</button></div>) : <p className="support-copy">No active goals.</p>}
+          {player.goals.some((goal) => goal.status === "COMPLETED") && <details className="completed-goals"><summary>Completed goals ({player.goals.filter((goal) => goal.status === "COMPLETED").length})</summary>{player.goals.filter((goal) => goal.status === "COMPLETED").map((goal) => <div className="profile-list-row" key={goal.id}><strong>✓ {goal.title}</strong><span>{goal.completedAt ? new Date(goal.completedAt).toLocaleDateString() : "Completed"}</span></div>)}</details>}
         </article>
 
         <article className="session-card">
           <div className="section-heading"><div><span className="section-kicker">COACH TAGS</span><h2>Quick reminders</h2></div></div>
-          <div className="coach-tags">{player.coachTags.length ? player.coachTags.map((tag) => <span className="coach-tag" key={tag.id}>{tag.label}</span>) : <span className="support-copy">No coach tags yet.</span>}</div>
+          <div className="profile-inline-form"><input value={newTag} onChange={(e) => setNewTag(e.target.value)} placeholder="Add coach reminder..." /><button className="primary-button" type="button" onClick={addTag}>Add Tag</button></div>
+          <div className="coach-tags">{player.coachTags.length ? player.coachTags.map((tag) => <button className="coach-tag removable-tag" type="button" title="Remove tag" onClick={() => removeTag(tag.id)} key={tag.id}>{tag.label} ×</button>) : <span className="support-copy">No coach tags yet.</span>}</div>
         </article>
 
         <article className="session-card">
@@ -184,7 +219,8 @@ export default function PlayerProfilePage() {
 
         <article className="session-card">
           <div className="section-heading"><div><span className="section-kicker">TRAINER ONLY</span><h2>Private notes</h2></div></div>
-          {player.trainerNotes.length ? player.trainerNotes.slice(0,3).map((note) => <div className="profile-list-row" key={note.id}><strong>{note.body}</strong><span>{new Date(note.createdAt).toLocaleDateString()}</span></div>) : <p className="support-copy">No private trainer notes yet.</p>}
+          <div className="profile-note-form"><textarea rows={3} value={newNote} onChange={(e) => setNewNote(e.target.value)} placeholder="Private trainer note..." /><button className="primary-button" type="button" onClick={addNote}>Add Private Note</button></div>
+          {player.trainerNotes.length ? player.trainerNotes.slice(0,5).map((note) => <div className="profile-list-row" key={note.id}><strong>{note.body}</strong><span>{new Date(note.createdAt).toLocaleDateString()}</span></div>) : <p className="support-copy">No private trainer notes yet.</p>}
         </article>
       </section>
     </main>
