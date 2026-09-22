@@ -1,231 +1,90 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { authenticatedFetch } from "@/lib/authenticated-fetch";
 
+type AthleticTest = { id:string; category:string; testKey:string; testName:string; value:number; unit:string; lowerIsBetter:boolean; notes:string|null; testedAt:string };
+type ProgressEvent = { id:string; type:string; category:string; title:string; result:string; spot:string|null; occurredAt:string };
 type PlayerDetail = {
-  id: string;
-  firstName: string;
-  lastName: string;
-  preferredName: string | null;
-  birthDate: string | null;
-  classYear: number | null;
-  height: string | null;
-  position: string | null;
-  schoolTeam: string | null;
-  yearsPlaying: number | null;
-  playingExperience: string | null;
-  selfReportedNeeds: string | null;
-  trainingLimitations: string | null;
-  goals: Array<{ id: string; title: string; type: string; status: string; completedAt?: string | null }>;
-  developmentFocuses: Array<{ id: string; focus: string; completedAt: string | null }>;
-  evaluations: Array<{ id: string; evaluatedAt: string; priorityAreas: string[]; shortTermGoal: string | null }>;
-  achievements: Array<{ id: string; title: string; achievedAt: string }>;
-  assignedWork: Array<{ id: string; title: string; status: string }>;
-  trainerNotes: Array<{ id: string; body: string; createdAt: string }>;
-  coachTags: Array<{ id: string; label: string }>;
+  id:string; firstName:string; lastName:string; preferredName:string|null; birthDate:string|null; classYear:number|null; height:string|null; position:string|null; schoolTeam:string|null; yearsPlaying:number|null; playingExperience:string|null; selfReportedNeeds:string|null; trainingLimitations:string|null;
+  goals:Array<{id:string;title:string;type:string;status:string;completedAt?:string|null}>;
+  developmentFocuses:Array<{id:string;focus:string;completedAt:string|null}>;
+  evaluations:Array<{id:string;evaluatedAt:string;priorityAreas:string[];shortTermGoal:string|null}>;
+  achievements:Array<{id:string;title:string;achievedAt:string}>;
+  assignedWork:Array<{id:string;title:string;status:string}>;
+  trainerNotes:Array<{id:string;body:string;createdAt:string}>;
+  coachTags:Array<{id:string;label:string}>;
+  progressEvents:ProgressEvent[];
+  athleticTests:AthleticTest[];
 };
 
+const testOptions = [
+  ["vertical-jump","Vertical Jump"],["broad-jump","Broad Jump"],["10-yard-sprint","10-Yard Sprint"],["20-yard-sprint","20-Yard Sprint"],
+  ["5-10-5-shuttle","5-10-5 Shuttle"],["lane-agility","Lane Agility"],["push-ups","Push-Ups"],["squat","Squat"],
+  ["conditioning-time","Conditioning Test"],["mobility-score","Movement Score"],["custom","Custom Test"],
+];
+
+function numericResult(value:string) {
+  const fraction=value.match(/(\d+(?:\.\d+)?)\s*\/\s*(\d+(?:\.\d+)?)/);
+  if (fraction) return Number(fraction[2]) ? (Number(fraction[1])/Number(fraction[2]))*100 : null;
+  const match=value.match(/-?\d+(?:\.\d+)?/);
+  return match ? Number(match[0]) : null;
+}
+
+function MiniTrend({values}:{values:number[]}) {
+  if (values.length < 2) return <span className="support-copy">Add another test to show a trend.</span>;
+  const min=Math.min(...values), max=Math.max(...values), range=max-min || 1;
+  const points=values.map((v,i)=>`${(i/(values.length-1))*100},${36-((v-min)/range)*32}`).join(" ");
+  return <svg className="mini-trend" viewBox="0 0 100 40" preserveAspectRatio="none" aria-label="Progress trend"><polyline points={points} fill="none" stroke="currentColor" strokeWidth="3" vectorEffect="non-scaling-stroke" /></svg>;
+}
+
 export default function PlayerProfilePage() {
-  const params = useParams<{ id: string }>();
-  const router = useRouter();
-  const [player, setPlayer] = useState<PlayerDetail | null>(null);
-  const [editing, setEditing] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState("");
-  const [newGoal, setNewGoal] = useState("");
-  const [newTag, setNewTag] = useState("");
-  const [newNote, setNewNote] = useState("");
+  const params=useParams<{id:string}>(); const router=useRouter();
+  const [player,setPlayer]=useState<PlayerDetail|null>(null); const [editing,setEditing]=useState(false); const [saving,setSaving]=useState(false); const [error,setError]=useState("");
+  const [newGoal,setNewGoal]=useState(""); const [newTag,setNewTag]=useState(""); const [newNote,setNewNote]=useState(""); const [resultView,setResultView]=useState<"athletic"|"basketball">("athletic");
+  const [testKey,setTestKey]=useState("vertical-jump"); const [testValue,setTestValue]=useState(""); const [customName,setCustomName]=useState(""); const [customCategory,setCustomCategory]=useState("Speed"); const [customUnit,setCustomUnit]=useState("sec"); const [testNotes,setTestNotes]=useState("");
 
-  async function fetchPlayer(): Promise<PlayerDetail> {
-    const response = await authenticatedFetch(`/api/trainer/players/${params.id}`);
-    const payload = await response.json();
-    if (!response.ok) throw new Error(payload.error ?? "Could not load player.");
-    return payload.player;
-  }
+  async function fetchPlayer(){const r=await authenticatedFetch(`/api/trainer/players/${params.id}`);const p=await r.json();if(!r.ok)throw new Error(p.error??"Could not load player.");return p.player as PlayerDetail;}
+  async function refresh(){setPlayer(await fetchPlayer());}
+  useEffect(()=>{let cancelled=false;fetchPlayer().then(p=>!cancelled&&setPlayer(p)).catch(e=>!cancelled&&setError(e instanceof Error?e.message:"Could not load player."));return()=>{cancelled=true}},[params.id]);
 
-  useEffect(() => {
-    let cancelled = false;
+  async function saveProfile(e:FormEvent<HTMLFormElement>){e.preventDefault();setSaving(true);setError("");try{const r=await authenticatedFetch(`/api/trainer/players/${params.id}`,{method:"PATCH",body:JSON.stringify(Object.fromEntries(new FormData(e.currentTarget).entries()))});const p=await r.json();if(!r.ok)throw new Error(p.error??"Could not save player.");await refresh();setEditing(false)}catch(e){setError(e instanceof Error?e.message:"Could not save player.")}finally{setSaving(false)}}
+  async function action(body:Record<string,unknown>){const r=await authenticatedFetch(`/api/trainer/players/${params.id}`,{method:"PATCH",body:JSON.stringify(body)});const p=await r.json();if(!r.ok)throw new Error(p.error??"Could not save change.");await refresh()}
+  async function addGoal(){if(!newGoal.trim())return;try{await action({action:"addGoal",title:newGoal,type:"DEVELOPMENT"});setNewGoal("")}catch(e){setError(e instanceof Error?e.message:"Could not add goal.")}}
+  async function addTag(){if(!newTag.trim())return;try{await action({action:"addTag",label:newTag});setNewTag("")}catch(e){setError(e instanceof Error?e.message:"Could not add tag.")}}
+  async function addNote(){if(!newNote.trim())return;try{await action({action:"addNote",body:newNote});setNewNote("")}catch(e){setError(e instanceof Error?e.message:"Could not add note.")}}
+  async function archivePlayer(){if(!confirm("Archive this player? Their history will stay in the database."))return;const r=await authenticatedFetch(`/api/trainer/players/${params.id}`,{method:"DELETE"});if(r.ok)router.replace("/trainer/players")}
+  async function deletePlayer(){if(!confirm("Permanently delete this player and ALL sessions, evaluations, goals, notes, results and testing history? This cannot be undone."))return;if(!confirm("Final confirmation: permanently delete this player?"))return;const r=await authenticatedFetch(`/api/trainer/players/${params.id}?permanent=true`,{method:"DELETE"});const p=await r.json();if(!r.ok){setError(p.error??"Could not delete player.");return}router.replace("/trainer/players")}
+  async function saveAthleticTest(e:FormEvent){e.preventDefault();setSaving(true);setError("");try{const r=await authenticatedFetch(`/api/trainer/players/${params.id}/athletic-tests`,{method:"POST",body:JSON.stringify({testKey,testName:testKey==="custom"?customName:undefined,category:customCategory,unit:customUnit,value:testValue,notes:testNotes,lowerIsBetter:testKey==="custom"&&["sec","time"].includes(customUnit.toLowerCase())})});const p=await r.json();if(!r.ok)throw new Error(p.error??"Could not save test.");setTestValue("");setTestNotes("");await refresh()}catch(e){setError(e instanceof Error?e.message:"Could not save test.")}finally{setSaving(false)}}
 
-    async function loadPlayer() {
-      try {
-        const nextPlayer = await fetchPlayer();
-        if (!cancelled) setPlayer(nextPlayer);
-      } catch (err) {
-        if (!cancelled) setError(err instanceof Error ? err.message : "Could not load player.");
-      }
-    }
+  const athleticGroups=useMemo(()=>{const map=new Map<string,AthleticTest[]>();for(const t of player?.athleticTests??[]){const list=map.get(t.testKey)??[];list.push(t);map.set(t.testKey,list)}return [...map.values()]},[player]);
+  const basketballGroups=useMemo(()=>{const map=new Map<string,ProgressEvent[]>();for(const e of player?.progressEvents??[]){if(!["SHOOTING_RESULT","DRIBBLING_RESULT","DRILL_PROGRESSION"].includes(e.type)||numericResult(e.result)===null)continue;const key=`${e.type}|${e.title}|${e.spot??""}`;const list=map.get(key)??[];list.push(e);map.set(key,list)}return [...map.values()]},[player]);
 
-    void loadPlayer();
-    return () => {
-      cancelled = true;
-    };
-  }, [params.id]);
+  if(!player)return <main className="players-shell"><p className="eyebrow">PLAYER PROFILE</p><h1>{error?"Could not load player":"Loading player…"}</h1>{error&&<p className="auth-error">{error}</p>}</main>;
+  const currentFocus=player.developmentFocuses.find(x=>!x.completedAt)?.focus; const latestEvaluation=player.evaluations[0];
 
-  async function saveProfile(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setSaving(true);
-    setError("");
-    const body = Object.fromEntries(new FormData(event.currentTarget).entries());
+  return <main className="players-shell">
+    <header className="players-header"><div><Link className="back-link" href="/trainer/players">← All players</Link><p className="eyebrow">PLAYER PROFILE</p><h1>{player.preferredName||player.firstName} {player.lastName}</h1><p className="support-copy">{[player.position,player.schoolTeam,player.classYear?`Class of ${player.classYear}`:null].filter(Boolean).join(" · ")||"Development profile"}</p></div>
+    <div className="profile-actions"><Link className="primary-link-button" href={`/trainer/players/${player.id}/session`}>Start Session</Link><button className="ghost-button" onClick={()=>setEditing(v=>!v)}>{editing?"Close edit":"Edit profile"}</button><Link className="primary-link-button" href={`/trainer/evaluation/new?playerId=${player.id}`}>Evaluate</Link></div></header>
+    {error&&<p className="auth-error">{error}</p>}
+    {editing&&<section className="player-create-card"><div className="section-heading"><div><span className="section-kicker">PROFILE DETAILS</span><h2>Edit athlete</h2></div></div><form className="player-create-grid" onSubmit={saveProfile}>
+      <label>First name<input name="firstName" defaultValue={player.firstName} required/></label><label>Last name<input name="lastName" defaultValue={player.lastName} required/></label><label>Preferred name<input name="preferredName" defaultValue={player.preferredName??""}/></label><label>Date of birth<input name="birthDate" type="date" defaultValue={player.birthDate?.slice(0,10)??""}/></label><label>Class year<input name="classYear" defaultValue={player.classYear??""}/></label><label>Height<input name="height" defaultValue={player.height??""}/></label><label>Position<input name="position" defaultValue={player.position??""}/></label><label>School / team<input name="schoolTeam" defaultValue={player.schoolTeam??""}/></label><label>Years playing<input name="yearsPlaying" defaultValue={player.yearsPlaying??""}/></label><label className="full-field">Basketball experience<textarea name="playingExperience" defaultValue={player.playingExperience??""}/></label><label className="full-field">Development needs<textarea name="selfReportedNeeds" defaultValue={player.selfReportedNeeds??""}/></label><label className="full-field">Training limitations<textarea name="trainingLimitations" defaultValue={player.trainingLimitations??""}/></label><button className="primary-button" disabled={saving}>Save profile</button>
+    </form><div className="danger-zone"><button className="danger-text-button" onClick={archivePlayer}>Archive player</button><button className="danger-button" onClick={deletePlayer}>Delete permanently</button></div></section>}
 
-    try {
-      const response = await authenticatedFetch(`/api/trainer/players/${params.id}`, {
-        method: "PATCH",
-        body: JSON.stringify(body),
-      });
-      const payload = await response.json();
-      if (!response.ok) throw new Error(payload.error ?? "Could not save player.");
-      const refreshedPlayer = await fetchPlayer();
-      setPlayer(refreshedPlayer);
-      setEditing(false);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not save player.");
-    } finally {
-      setSaving(false);
-    }
-  }
+    <section className="profile-summary-grid"><article className="profile-summary-card highlight-card"><span>Current development focus</span><strong>{currentFocus??"Not set yet"}</strong></article><article className="profile-summary-card"><span>Active goals</span><strong>{player.goals.filter(g=>g.status==="ACTIVE").length}</strong></article><article className="profile-summary-card"><span>Athletic tests</span><strong>{player.athleticTests.length}</strong></article><article className="profile-summary-card"><span>Latest evaluation</span><strong>{latestEvaluation?new Date(latestEvaluation.evaluatedAt).toLocaleDateString():"Not completed"}</strong></article></section>
 
-  async function playerAction(body: Record<string, unknown>) {
-    setError("");
-    const response = await authenticatedFetch(`/api/trainer/players/${params.id}`, { method: "PATCH", body: JSON.stringify(body) });
-    const payload = await response.json();
-    if (!response.ok) throw new Error(payload.error ?? "Could not save change.");
-    setPlayer(await fetchPlayer());
-  }
+    <section className="results-panel"><div className="section-heading"><div><span className="section-kicker">RESULTS</span><h2>Progress over time</h2></div><small>Objective measurements stay separate from coach ratings</small></div>
+      <div className="results-tabs"><button className={resultView==="athletic"?"active-result-tab":""} onClick={()=>setResultView("athletic")}>Athletic Performance</button><button className={resultView==="basketball"?"active-result-tab":""} onClick={()=>setResultView("basketball")}>Basketball Development</button></div>
+      {resultView==="athletic"&&<><form className="athletic-test-form" onSubmit={saveAthleticTest}><label>Test<select value={testKey} onChange={e=>setTestKey(e.target.value)}>{testOptions.map(([k,n])=><option value={k} key={k}>{n}</option>)}</select></label>{testKey==="custom"&&<><label>Test name<input value={customName} onChange={e=>setCustomName(e.target.value)} placeholder="Example: Pro Agility"/></label><label>Category<select value={customCategory} onChange={e=>setCustomCategory(e.target.value)}><option>Speed</option><option>Agility / COD</option><option>Vertical / Power</option><option>Strength</option><option>Conditioning</option><option>Mobility / Movement</option><option>Other</option></select></label><label>Unit<input value={customUnit} onChange={e=>setCustomUnit(e.target.value)} placeholder="sec, in, lb, reps"/></label></>}<label>Result<input inputMode="decimal" value={testValue} onChange={e=>setTestValue(e.target.value)} placeholder="Enter number" required/></label><label className="full-field">Test note<input value={testNotes} onChange={e=>setTestNotes(e.target.value)} placeholder="Optional context"/></label><button className="primary-button" disabled={saving}>{saving?"Saving…":"+ Save New Test"}</button></form>
+      <div className="result-card-grid">{athleticGroups.length?athleticGroups.map(group=>{const first=group[0],latest=group[group.length-1],best=first.lowerIsBetter?Math.min(...group.map(x=>x.value)):Math.max(...group.map(x=>x.value));const change=latest.value-first.value;return <article className="result-card" key={first.testKey}><span>{first.category}</span><h3>{first.testName}</h3><div className="result-numbers"><div><small>First</small><strong>{first.value} {first.unit}</strong></div><div><small>Latest</small><strong>{latest.value} {latest.unit}</strong></div><div><small>Best</small><strong>{best} {first.unit}</strong></div></div><MiniTrend values={group.map(x=>x.value)}/><p className="result-change">{group.length>1?`${change>0?"+":""}${Number(change.toFixed(2))} ${first.unit} since first test`:"Baseline saved"}</p><details><summary>History ({group.length})</summary>{[...group].reverse().map(x=><div className="test-history-row" key={x.id}><span>{new Date(x.testedAt).toLocaleDateString()}</span><strong>{x.value} {x.unit}</strong></div>)}</details></article>}):<p className="support-copy">No athletic testing yet. Save the first test above to establish a baseline.</p>}</div></>}
+      {resultView==="basketball"&&<div className="result-card-grid">{basketballGroups.length?basketballGroups.map(group=>{const first=group[0],latest=group[group.length-1],vals=group.map(x=>numericResult(x.result) as number);return <article className="result-card" key={first.id}><span>{first.category}</span><h3>{first.title}{first.spot?` · ${first.spot}`:""}</h3><div className="result-numbers"><div><small>First</small><strong>{first.result}</strong></div><div><small>Latest</small><strong>{latest.result}</strong></div><div><small>Entries</small><strong>{group.length}</strong></div></div><MiniTrend values={vals}/></article>}):<p className="support-copy">Measurable Quick Logs will build basketball progress here. Repeating the same drill name and spot creates a trend.</p>}</div>}
+    </section>
 
-  async function addGoal() {
-    if (!newGoal.trim()) return;
-    try { await playerAction({ action: "addGoal", title: newGoal, type: "DEVELOPMENT" }); setNewGoal(""); }
-    catch (err) { setError(err instanceof Error ? err.message : "Could not add goal."); }
-  }
-  async function completeGoal(goalId: string) {
-    try { await playerAction({ action: "completeGoal", goalId }); }
-    catch (err) { setError(err instanceof Error ? err.message : "Could not complete goal."); }
-  }
-  async function addTag() {
-    if (!newTag.trim()) return;
-    try { await playerAction({ action: "addTag", label: newTag }); setNewTag(""); }
-    catch (err) { setError(err instanceof Error ? err.message : "Could not add tag."); }
-  }
-  async function removeTag(tagId: string) {
-    try { await playerAction({ action: "removeTag", tagId }); }
-    catch (err) { setError(err instanceof Error ? err.message : "Could not remove tag."); }
-  }
-  async function addNote() {
-    if (!newNote.trim()) return;
-    try { await playerAction({ action: "addNote", body: newNote }); setNewNote(""); }
-    catch (err) { setError(err instanceof Error ? err.message : "Could not add note."); }
-  }
-
-  async function archivePlayer() {
-    if (!window.confirm("Archive this player? Their history will stay in the database.")) return;
-    const response = await authenticatedFetch(`/api/trainer/players/${params.id}`, { method: "DELETE" });
-    if (response.ok) router.replace("/trainer/players");
-  }
-
-  if (!player) {
-    return (
-      <main className="players-shell">
-        <p className="eyebrow">PLAYER PROFILE</p>
-        <h1>{error ? "Could not load player" : "Loading player…"}</h1>
-        {error && <p className="auth-error">{error}</p>}
-      </main>
-    );
-  }
-
-  const currentFocus = player.developmentFocuses.find((item) => !item.completedAt)?.focus;
-  const latestEvaluation = player.evaluations[0];
-
-  return (
-    <main className="players-shell">
-      <header className="players-header">
-        <div>
-          <Link className="back-link" href="/trainer/players">← All players</Link>
-          <p className="eyebrow">PLAYER PROFILE</p>
-          <h1>{player.preferredName || player.firstName} {player.lastName}</h1>
-          <p className="support-copy">
-            {[player.position, player.schoolTeam, player.classYear ? `Class of ${player.classYear}` : null].filter(Boolean).join(" · ") || "Development profile"}
-          </p>
-        </div>
-        <div className="profile-actions">
-          <Link className="primary-link-button" href={`/trainer/players/${player.id}/session`}>Start Session</Link>
-          <button className="ghost-button" type="button" onClick={() => setEditing((value) => !value)}>{editing ? "Close edit" : "Edit profile"}</button>
-          <Link className="primary-link-button" href={`/trainer/evaluation/new?playerId=${player.id}`}>{player.evaluations.length ? "Evaluation history" : "Baseline evaluation"}</Link>
-        </div>
-      </header>
-
-      {editing && (
-        <section className="player-create-card">
-          <div className="section-heading">
-            <div><span className="section-kicker">PROFILE DETAILS</span><h2>Edit athlete</h2></div>
-          </div>
-          <form className="player-create-grid" onSubmit={saveProfile}>
-            <label>First name<input name="firstName" defaultValue={player.firstName} required /></label>
-            <label>Last name<input name="lastName" defaultValue={player.lastName} required /></label>
-            <label>Preferred name<input name="preferredName" defaultValue={player.preferredName ?? ""} /></label>
-            <label>Date of birth<input name="birthDate" type="date" defaultValue={player.birthDate?.slice(0,10) ?? ""} /></label>
-            <label>Class year<input name="classYear" inputMode="numeric" defaultValue={player.classYear ?? ""} /></label>
-            <label>Height<input name="height" defaultValue={player.height ?? ""} /></label>
-            <label>Position<input name="position" defaultValue={player.position ?? ""} /></label>
-            <label>School / team<input name="schoolTeam" defaultValue={player.schoolTeam ?? ""} /></label>
-            <label>Years playing<input name="yearsPlaying" inputMode="numeric" defaultValue={player.yearsPlaying ?? ""} /></label>
-            <label className="full-field">Basketball experience<textarea name="playingExperience" rows={2} defaultValue={player.playingExperience ?? ""} /></label>
-            <label className="full-field">Player / parent development needs<textarea name="selfReportedNeeds" rows={2} defaultValue={player.selfReportedNeeds ?? ""} /></label>
-            <label className="full-field">Training limitations<textarea name="trainingLimitations" rows={2} defaultValue={player.trainingLimitations ?? ""} /></label>
-            <button className="primary-button" type="submit" disabled={saving}>{saving ? "Saving…" : "Save profile"}</button>
-          </form>
-          <button className="danger-text-button" type="button" onClick={archivePlayer}>Archive player</button>
-        </section>
-      )}
-
-      {error && <p className="auth-error">{error}</p>}
-
-      <section className="profile-summary-grid">
-        <article className="profile-summary-card highlight-card">
-          <span>Current development focus</span>
-          <strong>{currentFocus ?? "Not set yet"}</strong>
-        </article>
-        <article className="profile-summary-card">
-          <span>Active goals</span>
-          <strong>{player.goals.filter((goal) => goal.status === "ACTIVE").length}</strong>
-        </article>
-        <article className="profile-summary-card">
-          <span>Evaluations</span>
-          <strong>{player.evaluations.length}</strong>
-        </article>
-        <article className="profile-summary-card">
-          <span>Latest baseline / reevaluation</span>
-          <strong>{latestEvaluation ? new Date(latestEvaluation.evaluatedAt).toLocaleDateString() : "Not completed"}</strong>
-        </article>
-      </section>
-
-      <section className="profile-content-grid">
-        <article className="session-card">
-          <div className="section-heading"><div><span className="section-kicker">GOALS</span><h2>Current goals</h2></div></div>
-          <div className="profile-inline-form"><input value={newGoal} onChange={(e) => setNewGoal(e.target.value)} placeholder="Add a new goal..." /><button className="primary-button" type="button" onClick={addGoal}>Add Goal</button></div>
-          {player.goals.filter((goal) => goal.status === "ACTIVE").length ? player.goals.filter((goal) => goal.status === "ACTIVE").map((goal) => <div className="profile-list-row profile-action-row" key={goal.id}><div><strong>{goal.title}</strong><span>{goal.type.replaceAll("_", " ")}</span></div><button className="ghost-button" type="button" onClick={() => completeGoal(goal.id)}>✓ Complete</button></div>) : <p className="support-copy">No active goals.</p>}
-          {player.goals.some((goal) => goal.status === "COMPLETED") && <details className="completed-goals"><summary>Completed goals ({player.goals.filter((goal) => goal.status === "COMPLETED").length})</summary>{player.goals.filter((goal) => goal.status === "COMPLETED").map((goal) => <div className="profile-list-row" key={goal.id}><strong>✓ {goal.title}</strong><span>{goal.completedAt ? new Date(goal.completedAt).toLocaleDateString() : "Completed"}</span></div>)}</details>}
-        </article>
-
-        <article className="session-card">
-          <div className="section-heading"><div><span className="section-kicker">COACH TAGS</span><h2>Quick reminders</h2></div></div>
-          <div className="profile-inline-form"><input value={newTag} onChange={(e) => setNewTag(e.target.value)} placeholder="Add coach reminder..." /><button className="primary-button" type="button" onClick={addTag}>Add Tag</button></div>
-          <div className="coach-tags">{player.coachTags.length ? player.coachTags.map((tag) => <button className="coach-tag removable-tag" type="button" title="Remove tag" onClick={() => removeTag(tag.id)} key={tag.id}>{tag.label} ×</button>) : <span className="support-copy">No coach tags yet.</span>}</div>
-        </article>
-
-        <article className="session-card">
-          <div className="section-heading"><div><span className="section-kicker">EVALUATION</span><h2>Latest development plan</h2></div></div>
-          {latestEvaluation ? <><p><strong>{latestEvaluation.priorityAreas.join(" · ") || "No priorities saved"}</strong></p><p className="support-copy">{latestEvaluation.shortTermGoal || "No short-term goal saved."}</p></> : <p className="support-copy">Complete the first baseline evaluation to establish priorities.</p>}
-        </article>
-
-        <article className="session-card">
-          <div className="section-heading"><div><span className="section-kicker">TRAINER ONLY</span><h2>Private notes</h2></div></div>
-          <div className="profile-note-form"><textarea rows={3} value={newNote} onChange={(e) => setNewNote(e.target.value)} placeholder="Private trainer note..." /><button className="primary-button" type="button" onClick={addNote}>Add Private Note</button></div>
-          {player.trainerNotes.length ? player.trainerNotes.slice(0,5).map((note) => <div className="profile-list-row" key={note.id}><strong>{note.body}</strong><span>{new Date(note.createdAt).toLocaleDateString()}</span></div>) : <p className="support-copy">No private trainer notes yet.</p>}
-        </article>
-      </section>
-    </main>
-  );
+    <section className="profile-content-grid"><article className="session-card"><div className="section-heading"><div><span className="section-kicker">GOALS</span><h2>Current goals</h2></div></div><div className="profile-inline-form"><input value={newGoal} onChange={e=>setNewGoal(e.target.value)} placeholder="Add a new goal..."/><button className="primary-button" onClick={addGoal}>Add Goal</button></div>{player.goals.filter(g=>g.status==="ACTIVE").map(g=><div className="profile-list-row profile-action-row" key={g.id}><strong>{g.title}</strong><button className="ghost-button" onClick={()=>action({action:"completeGoal",goalId:g.id})}>✓ Complete</button></div>)}</article>
+    <article className="session-card"><div className="section-heading"><div><span className="section-kicker">COACH TAGS</span><h2>Quick reminders</h2></div></div><div className="profile-inline-form"><input value={newTag} onChange={e=>setNewTag(e.target.value)} placeholder="Add coach reminder..."/><button className="primary-button" onClick={addTag}>Add Tag</button></div><div className="coach-tags">{player.coachTags.map(t=><button className="coach-tag removable-tag" key={t.id} onClick={()=>action({action:"removeTag",tagId:t.id})}>{t.label} ×</button>)}</div></article>
+    <article className="session-card"><div className="section-heading"><div><span className="section-kicker">EVALUATION</span><h2>Latest development plan</h2></div></div>{latestEvaluation?<><p><strong>{latestEvaluation.priorityAreas.join(" · ")||"No priorities saved"}</strong></p><p className="support-copy">{latestEvaluation.shortTermGoal||"No short-term goal saved."}</p></>:<p className="support-copy">Complete the first baseline evaluation to establish priorities.</p>}</article>
+    <article className="session-card"><div className="section-heading"><div><span className="section-kicker">TRAINER ONLY</span><h2>Private notes</h2></div></div><div className="profile-note-form"><textarea rows={3} value={newNote} onChange={e=>setNewNote(e.target.value)} placeholder="Private trainer note..."/><button className="primary-button" onClick={addNote}>Add Private Note</button></div>{player.trainerNotes.slice(0,5).map(n=><div className="profile-list-row" key={n.id}><strong>{n.body}</strong><span>{new Date(n.createdAt).toLocaleDateString()}</span></div>)}</article></section>
+  </main>;
 }
