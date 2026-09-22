@@ -77,6 +77,13 @@ function logTypeLabel(value: string) {
   return map[value] ?? "Drill result";
 }
 
+async function fetchWorkspace(playerId: string): Promise<WorkspacePlayer> {
+  const response = await authenticatedFetch(`/api/trainer/players/${playerId}/sessions`);
+  const payload = await response.json();
+  if (!response.ok) throw new Error(payload.error ?? "Could not load session workspace.");
+  return payload.player;
+}
+
 export default function RealPlayerSessionPage() {
   const params = useParams<{ id: string }>();
   const [player, setPlayer] = useState<WorkspacePlayer | null>(null);
@@ -102,15 +109,20 @@ export default function RealPlayerSessionPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
-  async function loadWorkspace() {
-    const response = await authenticatedFetch(`/api/trainer/players/${params.id}/sessions`);
-    const payload = await response.json();
-    if (!response.ok) throw new Error(payload.error ?? "Could not load session workspace.");
-    setPlayer(payload.player);
-  }
-
   useEffect(() => {
-    void loadWorkspace().catch((err) => setError(err instanceof Error ? err.message : "Could not load session workspace."));
+    let cancelled = false;
+
+    void fetchWorkspace(params.id)
+      .then((nextPlayer) => {
+        if (!cancelled) setPlayer(nextPlayer);
+      })
+      .catch((err) => {
+        if (!cancelled) setError(err instanceof Error ? err.message : "Could not load session workspace.");
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, [params.id]);
 
   const readiness = useMemo(() => {
@@ -261,7 +273,8 @@ export default function RealPlayerSessionPage() {
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.error ?? "Could not complete session.");
       setSession(payload.session);
-      await loadWorkspace();
+      const refreshedPlayer = await fetchWorkspace(params.id);
+      setPlayer(refreshedPlayer);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not complete session.");
     } finally {
