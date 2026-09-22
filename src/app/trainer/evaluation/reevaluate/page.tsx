@@ -1,239 +1,43 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { authenticatedFetch } from "@/lib/authenticated-fetch";
 
-const categories = [
-  "Ball Control",
-  "Finishing",
-  "Shooting",
-  "Decision Making",
-  "Playing Under Pressure",
-  "Off-Ball Awareness",
-  "On-Ball Defense",
-  "Defensive Awareness",
-  "Effort & Competitiveness",
-  "Coachability",
-  "Confidence",
-  "Response to Mistakes",
-];
+type Rating = { rating:number|null; criterion:{label:string;sortOrder:number} };
+type Evaluation = { id:string;evaluatedAt:string;priorityAreas:string[];shortTermGoal:string|null;ratings:Rating[] };
+type Evidence = { id:string;category:string;title:string;result:string;occurredAt:string };
+type Player = { id:string;firstName:string;lastName:string;preferredName:string|null;evaluations:Evaluation[];progressEvents:Evidence[] };
 
-const ratingLabels = ["", "Building Foundation", "Developing", "Game Ready", "Getting Tuff", "Tuff"];
+const labels=["","Building Foundation","Developing","Game Ready","Getting Tuff","Tuff"];
 
-const priorRatings: Record<string, number> = {
-  "Ball Control": 2,
-  Finishing: 2,
-  Shooting: 3,
-  "Decision Making": 2,
-  "Playing Under Pressure": 2,
-  "Off-Ball Awareness": 3,
-  "On-Ball Defense": 3,
-  "Defensive Awareness": 2,
-  "Effort & Competitiveness": 3,
-  Coachability: 4,
-  Confidence: 2,
-  "Response to Mistakes": 2,
-};
+export default function ReevaluationPage(){
+  const search=useSearchParams(); const playerId=search.get("playerId");
+  const [player,setPlayer]=useState<Player|null>(null); const [ratings,setRatings]=useState<Record<string,number|null>>({});
+  const [notes,setNotes]=useState<Record<string,string>>({}); const [priorities,setPriorities]=useState<string[]>([]);
+  const [goal,setGoal]=useState(""); const [summary,setSummary]=useState(""); const [error,setError]=useState(""); const [saving,setSaving]=useState(false); const [saved,setSaved]=useState(false);
 
-const evidence: Record<string, string[]> = {
-  "Ball Control": ["Timed combo: 22.4s → 20.8s", "Stayed lower through live pressure"],
-  Finishing: ["7/10 contact finishes right side", "Improved two-foot balance"],
-  Shooting: ["8/10 one-dribble pull-up right slot"],
-  "Decision Making": ["Quicker second-side read in live play"],
-  "Playing Under Pressure": ["Two clean possessions vs guide-hand pressure"],
-  "Off-Ball Awareness": ["Better spacing in 3v3"],
-  "On-Ball Defense": ["Contained drive 4/6 reps"],
-  "Defensive Awareness": ["Late help still showing up"],
-  "Effort & Competitiveness": ["Competed through final live segment"],
-  Coachability: ["Applied footwork cue within same session"],
-  Confidence: ["Attacked closeout without hesitation"],
-  "Response to Mistakes": ["Reset faster after turnover"],
-};
+  useEffect(()=>{if(!playerId)return;authenticatedFetch(`/api/trainer/players/${playerId}`).then(async r=>{const p=await r.json();if(!r.ok)throw new Error(p.error??"Could not load player.");return p.player as Player}).then(p=>{setPlayer(p);const previous=p.evaluations[0];if(previous){setRatings(Object.fromEntries(previous.ratings.map(x=>[x.criterion.label,x.rating])));setPriorities(previous.priorityAreas);setGoal(previous.shortTermGoal??"")}}).catch(e=>setError(e instanceof Error?e.message:"Could not load player."))},[playerId]);
 
-export default function ReevaluationPage() {
-  const [ratings, setRatings] = useState<Record<string, number | null>>(
-    Object.fromEntries(categories.map((category) => [category, priorRatings[category]])),
-  );
-  const [priorities, setPriorities] = useState<string[]>(["Ball Control", "Decision Making"]);
-  const [goal, setGoal] = useState("Keep control and make the correct first read under live pressure.");
+  const previous=player?.evaluations[0]; const categories=previous?.ratings.map(x=>x.criterion.label)??[];
+  const prior=useMemo(()=>Object.fromEntries((previous?.ratings??[]).map(x=>[x.criterion.label,x.rating])),[previous]);
+  const evidence=useMemo(()=>{if(!previous||!player)return[];const since=new Date(previous.evaluatedAt).getTime();return player.progressEvents.filter(x=>new Date(x.occurredAt).getTime()>since)},[player,previous]);
 
-  const changes = useMemo(
-    () =>
-      categories.map((category) => {
-        const previous = priorRatings[category];
-        const current = ratings[category];
-        return {
-          category,
-          previous,
-          current,
-          delta: current === null ? null : current - previous,
-        };
-      }),
-    [ratings],
-  );
+  function togglePriority(category:string){setPriorities(current=>current.includes(category)?current.filter(x=>x!==category):current.length<3?[...current,category]:current)}
+  async function save(){if(!playerId)return;setSaving(true);setError("");try{const r=await authenticatedFetch(`/api/trainer/players/${playerId}/reevaluations`,{method:"POST",body:JSON.stringify({priorities,shortTermGoal:goal,summary,ratings:categories.map(category=>({category,rating:ratings[category]??null,note:notes[category]??""}))})});const p=await r.json();if(!r.ok)throw new Error(p.error??"Could not save reevaluation.");setSaved(true)}catch(e){setError(e instanceof Error?e.message:"Could not save reevaluation.")}finally{setSaving(false)}}
 
-  const changedCount = changes.filter((item) => item.delta !== 0 && item.delta !== null).length;
+  if(!playerId)return <main className="reeval-shell"><p className="eyebrow">PLAYER REEVALUATION</p><h1>Choose a player first</h1><Link className="primary-link-button" href="/trainer/players">Open Players</Link></main>;
+  if(!player)return <main className="reeval-shell"><p className="eyebrow">PLAYER REEVALUATION</p><h1>{error?"Could not load player":"Loading…"} </h1>{error&&<p className="auth-error">{error}</p>}</main>;
+  if(!previous)return <main className="reeval-shell"><p className="eyebrow">PLAYER REEVALUATION</p><h1>Baseline required</h1><p className="support-copy">Complete the first evaluation before creating a reevaluation.</p><Link className="primary-link-button" href={`/trainer/evaluation/new?playerId=${player.id}`}>Start Baseline</Link></main>;
+  if(saved)return <main className="reeval-shell"><p className="eyebrow">REEVALUATION SAVED</p><h1>New evaluation added to history.</h1><p className="support-copy">The previous evaluation is preserved unchanged and the active development plan has been updated.</p><Link className="primary-link-button" href={`/trainer/players/${player.id}`}>Back to Player Profile</Link></main>;
 
-  function togglePriority(category: string) {
-    setPriorities((current) => {
-      if (current.includes(category)) return current.filter((item) => item !== category);
-      if (current.length >= 3) return current;
-      return [...current, category];
-    });
-  }
-
-  return (
-    <main className="reeval-shell">
-      <header className="reeval-header">
-        <div>
-          <p className="eyebrow">PLAYER REEVALUATION</p>
-          <h1 className="evaluation-title">Jordan M.</h1>
-          <p className="session-meta">Compare against baseline · Evidence since last evaluation included</p>
-        </div>
-        <div className="step-chip">{changedCount} rating changes</div>
-      </header>
-
-      <section className="reeval-overview">
-        <div>
-          <span>Previous evaluation</span>
-          <strong>Aug 20, 2026</strong>
-        </div>
-        <div>
-          <span>Current development focus</span>
-          <strong>Ball control under pressure</strong>
-        </div>
-        <div>
-          <span>Current short-term goal</span>
-          <strong>Stay low and make the correct first read</strong>
-        </div>
-      </section>
-
-      <section className="evaluation-card">
-        <div className="section-heading">
-          <div>
-            <span className="section-kicker">COMPARE + UPDATE</span>
-            <h2>Use evidence, then make the coaching call</h2>
-          </div>
-        </div>
-        <p className="support-copy">
-          The previous evaluation never changes. This screen creates a new evaluation while showing what happened in between.
-        </p>
-
-        <div className="reeval-stack">
-          {categories.map((category) => {
-            const previous = priorRatings[category];
-            const current = ratings[category];
-            const delta = current === null ? null : current - previous;
-
-            return (
-              <article className="reeval-card" key={category}>
-                <div className="reeval-title-row">
-                  <h3>{category}</h3>
-                  {delta !== null && (
-                    <span className={delta > 0 ? "delta positive" : delta < 0 ? "delta negative" : "delta"}>
-                      {delta > 0 ? `+${delta}` : delta}
-                    </span>
-                  )}
-                </div>
-
-                <div className="reeval-columns">
-                  <div className="previous-rating">
-                    <span>Previous</span>
-                    <strong>{previous}</strong>
-                    <p>{ratingLabels[previous]}</p>
-                  </div>
-
-                  <div className="evidence-panel">
-                    <span>Evidence since last evaluation</span>
-                    <ul>
-                      {(evidence[category] ?? ["No meaningful evidence logged yet"]).map((item) => (
-                        <li key={item}>{item}</li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  <div className="new-rating">
-                    <span>New rating</span>
-                    <div className="compact-rating-scale">
-                      {[1,2,3,4,5].map((rating) => (
-                        <button
-                          key={rating}
-                          type="button"
-                          className={current === rating ? "compact-rating selected" : "compact-rating"}
-                          onClick={() => setRatings((state) => ({ ...state, [category]: rating }))}
-                        >
-                          {rating}
-                        </button>
-                      ))}
-                    </div>
-                    <p>{current ? ratingLabels[current] : "Not assessed"}</p>
-                  </div>
-                </div>
-
-                <textarea
-                  className="evaluation-note"
-                  rows={2}
-                  placeholder="Why did this rating change or stay the same? Optional trainer note..."
-                />
-              </article>
-            );
-          })}
-        </div>
-      </section>
-
-      <section className="evaluation-card reeval-plan">
-        <div className="section-heading">
-          <div>
-            <span className="section-kicker">UPDATED DEVELOPMENT PLAN</span>
-            <h2>What matters next?</h2>
-          </div>
-          <span className="speed-chip">{priorities.length}/3 priorities</span>
-        </div>
-
-        <p className="support-copy">
-          Keep, remove, or replace the athlete&apos;s top 2–3 priorities based on this reevaluation.
-        </p>
-
-        <div className="priority-grid">
-          {categories.map((category) => (
-            <button
-              key={category}
-              type="button"
-              className={priorities.includes(category) ? "priority-button selected" : "priority-button"}
-              onClick={() => togglePriority(category)}
-            >
-              {category}
-            </button>
-          ))}
-        </div>
-
-        <label className="goal-field">
-          Updated short-term goal
-          <textarea
-            rows={3}
-            value={goal}
-            onChange={(event) => setGoal(event.target.value)}
-          />
-        </label>
-
-        <div className="reeval-summary">
-          <div>
-            <span>Keep doing</span>
-            <strong>Use meaningful evidence between formal evaluations</strong>
-          </div>
-          <div>
-            <span>Updated priorities</span>
-            <strong>{priorities.length ? priorities.join(" · ") : "Choose 2–3 priorities"}</strong>
-          </div>
-          <div>
-            <span>Next formal evaluation</span>
-            <strong>Trainer decides based on development cycle</strong>
-          </div>
-        </div>
-
-        <button className="primary-button" type="button">
-          Save New Evaluation & Update Plan
-        </button>
-      </section>
-    </main>
-  );
+  return <main className="reeval-shell">
+    <header className="reeval-header"><div><Link className="back-link" href={`/trainer/players/${player.id}`}>← Player profile</Link><p className="eyebrow">PLAYER REEVALUATION</p><h1 className="evaluation-title">{player.preferredName||player.firstName} {player.lastName}</h1><p className="session-meta">Previous evaluation: {new Date(previous.evaluatedAt).toLocaleDateString()} · {evidence.length} evidence entries since</p></div></header>
+    {error&&<p className="auth-error">{error}</p>}
+    <section className="evaluation-card"><div className="section-heading"><div><span className="section-kicker">COMPARE + UPDATE</span><h2>Use the training evidence, then make the coaching call</h2></div></div>
+      <div className="reeval-stack">{categories.map(category=>{const old=prior[category] as number|null;const current=ratings[category];const related=evidence.filter(x=>x.category.toLowerCase().includes(category.toLowerCase().split(" ")[0])).slice(-3);return <article className="reeval-card" key={category}><div className="reeval-title-row"><h3>{category}</h3>{old!==null&&current!==null&&<span className="delta">{current-old>0?"+":""}{current-old}</span>}</div><div className="reeval-columns"><div className="previous-rating"><span>Previous</span><strong>{old??"—"}</strong><p>{old?labels[old]:"Not assessed"}</p></div><div className="evidence-panel"><span>Evidence since last evaluation</span>{related.length?<ul>{related.map(x=><li key={x.id}>{x.title}: {x.result}</li>)}</ul>:<p>No matching Quick Log yet.</p>}</div><div className="new-rating"><span>New rating</span><div className="compact-rating-scale">{[1,2,3,4,5].map(n=><button type="button" key={n} className={current===n?"compact-rating selected":"compact-rating"} onClick={()=>setRatings(s=>({...s,[category]:n}))}>{n}</button>)}</div><p>{current?labels[current]:"Not assessed"}</p></div></div><textarea className="evaluation-note" rows={2} value={notes[category]??""} onChange={e=>setNotes(s=>({...s,[category]:e.target.value}))} placeholder="Why did this rating change or stay the same? Optional trainer note..."/></article>})}</div>
+    </section>
+    <section className="evaluation-card reeval-plan"><div className="section-heading"><div><span className="section-kicker">UPDATED DEVELOPMENT PLAN</span><h2>What matters next?</h2></div><span className="speed-chip">{priorities.length}/3 priorities</span></div><div className="priority-grid">{categories.map(category=><button type="button" key={category} className={priorities.includes(category)?"priority-button selected":"priority-button"} onClick={()=>togglePriority(category)}>{category}</button>)}</div><label className="goal-field">Updated short-term goal<textarea rows={3} value={goal} onChange={e=>setGoal(e.target.value)}/></label><label className="goal-field">Parent-safe evaluation summary (optional)<textarea rows={3} value={summary} onChange={e=>setSummary(e.target.value)} placeholder="What improved and what are we focusing on next?"/></label><button className="primary-button" type="button" onClick={save} disabled={saving}>{saving?"Saving…":"Save New Evaluation & Update Plan"}</button></section>
+  </main>
 }
