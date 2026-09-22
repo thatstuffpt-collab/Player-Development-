@@ -15,7 +15,7 @@ export default function TrainerLayout({ children }: { children: ReactNode }) {
       {children}
       <nav className="trainer-mobile-nav" aria-label="Mobile trainer navigation">
         <Link href="/trainer/players"><span aria-hidden="true">◉</span><strong>Players</strong></Link>
-        <Link href="/trainer/players"><span aria-hidden="true">▣</span><strong>Start Session</strong></Link>
+        <Link href="/trainer/players#start-session"><span aria-hidden="true">▣</span><strong>Start Session</strong></Link>
       </nav>
     </TrainerAuthGate>
   );
