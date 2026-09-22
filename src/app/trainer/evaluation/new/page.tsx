@@ -161,7 +161,8 @@ export default function BaselineEvaluationPage() {
       });
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.error ?? "Could not save baseline.");
-      router.push(`/trainer/players/${playerId}`);\n      router.refresh();
+      router.push(`/trainer/players/${playerId}`);
+      router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not save baseline.");
       setSaving(false);
