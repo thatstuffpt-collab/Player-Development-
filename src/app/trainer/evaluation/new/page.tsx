@@ -161,7 +161,7 @@ export default function BaselineEvaluationPage() {
       });
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.error ?? "Could not save baseline.");
-      router.replace(`/trainer/players/${playerId}`);
+      router.push(`/trainer/players/${playerId}`);\n      router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not save baseline.");
       setSaving(false);
@@ -261,7 +261,7 @@ export default function BaselineEvaluationPage() {
           <div className="priority-grid">{categories.map((category) => <button key={category} type="button" className={priorities.includes(category) ? "priority-button selected" : "priority-button"} onClick={() => togglePriority(category)}>{category}</button>)}</div>
           <label className="goal-field">First short-term goal<textarea rows={3} value={goal} onChange={(event) => setGoal(event.target.value)} placeholder="Example: Maintain a low, strong stance through change-of-direction combinations under pressure." /></label>
           <div className="plan-summary"><span>Initial development focus</span><strong>{priorities.length ? priorities.join(" · ") : "Choose 2–3 priorities"}</strong><p>{goal || "Add the first measurable short-term goal."}</p></div>
-          <button className="primary-button" type="button" onClick={saveBaseline} disabled={saving}>{saving ? "Saving baseline…" : "Save Baseline & Create Player Plan"}</button>
+          <button className="primary-button" type="button" onClick={saveBaseline} disabled={saving}>{saving ? "Saving baseline…" : "Save Baseline & Create Player Plan"}</button>{error && <p className="auth-error" role="alert">{error}</p>}
         </section>
       )}
     </main>
