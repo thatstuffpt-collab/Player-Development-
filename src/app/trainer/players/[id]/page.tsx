@@ -34,7 +34,10 @@ export default function PlayerProfilePage() {
   const [player, setPlayer] = useState<PlayerDetail | null>(null);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState("");\n  const [newGoal, setNewGoal] = useState("");\n  const [newTag, setNewTag] = useState("");\n  const [newNote, setNewNote] = useState("");
+  const [error, setError] = useState("");
+  const [newGoal, setNewGoal] = useState("");
+  const [newTag, setNewTag] = useState("");
+  const [newNote, setNewNote] = useState("");
 
   async function fetchPlayer(): Promise<PlayerDetail> {
     const response = await authenticatedFetch(`/api/trainer/players/${params.id}`);
