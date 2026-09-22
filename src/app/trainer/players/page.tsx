@@ -106,7 +106,7 @@ export default function PlayersPage() {
 
       {error && <p className="auth-error">{error}</p>}
 
-      <section className="player-list-section">
+      <section className="player-list-section" id="start-session">
         <div className="section-heading">
           <div>
             <span className="section-kicker">ACTIVE CLIENTS</span>
@@ -122,16 +122,17 @@ export default function PlayersPage() {
         ) : (
           <div className="player-list-grid">
             {players.map((player) => (
-              <Link className="player-list-card" href={`/trainer/players/${player.id}`} key={player.id}>
-                <div>
+              <article className="player-list-card" key={player.id}>
+                <Link className="player-card-profile-link" href={`/trainer/players/${player.id}`}>
                   <strong>{player.preferredName || player.firstName} {player.lastName}</strong>
                   <p>{[player.position, player.schoolTeam, player.classYear ? `Class of ${player.classYear}` : null].filter(Boolean).join(" · ") || "Profile started"}</p>
-                </div>
+                </Link>
                 <div className="player-focus-line">
                   <span>Current focus</span>
                   <strong>{player.developmentFocuses[0]?.focus ?? "Not set yet"}</strong>
+                  <Link className="player-session-link" href={`/trainer/players/${player.id}/session`}>Start Session</Link>
                 </div>
-              </Link>
+              </article>
             ))}
           </div>
         )}
