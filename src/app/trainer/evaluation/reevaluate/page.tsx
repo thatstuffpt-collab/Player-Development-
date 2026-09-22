@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { authenticatedFetch } from "@/lib/authenticated-fetch";
 
@@ -12,7 +12,7 @@ type Player = { id:string;firstName:string;lastName:string;preferredName:string|
 
 const labels=["","Building Foundation","Developing","Game Ready","Getting Tuff","Tuff"];
 
-export default function ReevaluationPage(){
+function ReevaluationContent(){
   const search=useSearchParams(); const playerId=search.get("playerId");
   const [player,setPlayer]=useState<Player|null>(null); const [ratings,setRatings]=useState<Record<string,number|null>>({});
   const [notes,setNotes]=useState<Record<string,string>>({}); const [priorities,setPriorities]=useState<string[]>([]);
@@ -40,4 +40,8 @@ export default function ReevaluationPage(){
     </section>
     <section className="evaluation-card reeval-plan"><div className="section-heading"><div><span className="section-kicker">UPDATED DEVELOPMENT PLAN</span><h2>What matters next?</h2></div><span className="speed-chip">{priorities.length}/3 priorities</span></div><div className="priority-grid">{categories.map(category=><button type="button" key={category} className={priorities.includes(category)?"priority-button selected":"priority-button"} onClick={()=>togglePriority(category)}>{category}</button>)}</div><label className="goal-field">Updated short-term goal<textarea rows={3} value={goal} onChange={e=>setGoal(e.target.value)}/></label><label className="goal-field">Parent-safe evaluation summary (optional)<textarea rows={3} value={summary} onChange={e=>setSummary(e.target.value)} placeholder="What improved and what are we focusing on next?"/></label><button className="primary-button" type="button" onClick={save} disabled={saving}>{saving?"Saving…":"Save New Evaluation & Update Plan"}</button></section>
   </main>
+}
+
+export default function ReevaluationPage(){
+  return <Suspense fallback={<main className="reeval-shell"><p className="eyebrow">PLAYER REEVALUATION</p><h1>Loading…</h1></main>}><ReevaluationContent /></Suspense>;
 }
