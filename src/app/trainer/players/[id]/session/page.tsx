@@ -141,7 +141,6 @@ export default function RealPlayerSessionPage() {
   const selectedSavedSection = sessionSections.find((item) => item.title === activeSection?.title) ?? sessionSections[0];
   const savedDrills = sessionPlan.filter((item) => item.itemType === "DRILL" && item.parentItemId === selectedSavedSection?.id);
   const selectedSavedDrill = savedDrills.find((item) => item.id === selectedDrillId);
-  const shootingSelected = selectedSavedDrill?.focusArea === "SHOOTING" || selectedSavedSection?.focusArea === "SHOOTING" || /shoot/i.test(selectedSavedSection?.title ?? "");
 
   function addSection() {
     const id = Date.now();
