@@ -10,13 +10,12 @@ export default function TrainerLayout({ children }: { children: ReactNode }) {
         <Link className="trainer-brand" href="/trainer/players">THAT&apos;S TUFF</Link>
         <div className="trainer-nav-links">
           <Link href="/trainer/players">Players</Link>
-          <Link href="/trainer/session">Session</Link>
         </div>
       </nav>
       {children}
       <nav className="trainer-mobile-nav" aria-label="Mobile trainer navigation">
         <Link href="/trainer/players"><span aria-hidden="true">◉</span><strong>Players</strong></Link>
-        <Link href="/trainer/session"><span aria-hidden="true">▣</span><strong>Session</strong></Link>
+        <Link href="/trainer/players"><span aria-hidden="true">▣</span><strong>Start Session</strong></Link>
       </nav>
     </TrainerAuthGate>
   );
