@@ -31,6 +31,8 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
         assignedWork: { orderBy: { assignedAt: "desc" } },
         trainerNotes: { orderBy: { createdAt: "desc" } },
         coachTags: { where: { isActive: true }, orderBy: { createdAt: "asc" } },
+        progressEvents: { orderBy: { occurredAt: "asc" }, take: 250 },
+        athleticTests: { orderBy: { testedAt: "asc" } },
       },
     });
     if (!player || player.archivedAt) return NextResponse.json({ error: "Player not found." }, { status: 404 });
@@ -106,11 +108,16 @@ export async function DELETE(request: Request, context: { params: Promise<{ id: 
     await requireAppUser(request, ["TRAINER", "ADMIN"]);
     const { id } = await context.params;
     const prisma = getPrisma();
+    const url = new URL(request.url);
+    if (url.searchParams.get("permanent") === "true") {
+      await prisma.player.delete({ where: { id } });
+      return NextResponse.json({ ok: true, deleted: true });
+    }
     await prisma.player.update({ where: { id }, data: { archivedAt: new Date() } });
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: true, archived: true });
   } catch (error) {
     if (error instanceof AuthError) return NextResponse.json({ error: error.message }, { status: error.status });
-    console.error("Failed to archive player", error);
-    return NextResponse.json({ error: "Could not archive player." }, { status: 500 });
+    console.error("Failed to remove player", error);
+    return NextResponse.json({ error: "Could not remove player." }, { status: 500 });
   }
 }
