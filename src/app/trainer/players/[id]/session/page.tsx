@@ -93,7 +93,8 @@ async function fetchWorkspace(playerId: string): Promise<WorkspacePlayer> {
 }
 
 export default function RealPlayerSessionPage() {
-  const params = useParams<{ id: string }>();\n  const router = useRouter();
+  const params = useParams<{ id: string }>();
+  const router = useRouter();
   const [player, setPlayer] = useState<WorkspacePlayer | null>(null);
   const [session, setSession] = useState<SessionRecord | null>(null);
   const [step, setStep] = useState<"before" | "during" | "wrap">("before");
