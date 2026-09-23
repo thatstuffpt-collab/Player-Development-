@@ -12,6 +12,7 @@ export default function TrainerLayout({ children }: { children: ReactNode }) {
           <Link href="/trainer/today">Today</Link>
           <Link href="/trainer/players">Players</Link>
           <Link href="/trainer/evaluate">Evaluate</Link>
+          <Link href="/trainer/drills">Drills</Link>
         </div>
       </nav>
       {children}
@@ -19,6 +20,7 @@ export default function TrainerLayout({ children }: { children: ReactNode }) {
         <Link href="/trainer/today"><span aria-hidden="true">⌂</span><strong>Today</strong></Link>
         <Link href="/trainer/players"><span aria-hidden="true">◉</span><strong>Players</strong></Link>
         <Link href="/trainer/evaluate"><span aria-hidden="true">✓</span><strong>Evaluate</strong></Link>
+        <Link href="/trainer/drills"><span aria-hidden="true">▦</span><strong>Drills</strong></Link>
       </nav>
     </TrainerAuthGate>
   );
