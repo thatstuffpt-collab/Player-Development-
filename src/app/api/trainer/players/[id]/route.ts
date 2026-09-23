@@ -26,7 +26,7 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
       include: {
         goals: { orderBy: { createdAt: "desc" } },
         developmentFocuses: { orderBy: { startedAt: "desc" } },
-        evaluations: { orderBy: { evaluatedAt: "desc" }, select: { id: true, evaluatedAt: true, summary: true, priorityAreas: true, shortTermGoal: true, nextFocus: true } },
+        evaluations: { orderBy: { evaluatedAt: "desc" }, include: { ratings: { include: { criterion: { select: { label: true, sortOrder: true } } }, orderBy: { criterion: { sortOrder: "asc" } } } } },
         achievements: { orderBy: { achievedAt: "desc" } },
         assignedWork: { orderBy: { assignedAt: "desc" } },
         trainerNotes: { orderBy: { createdAt: "desc" } },
