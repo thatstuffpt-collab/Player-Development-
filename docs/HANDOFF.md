@@ -2,50 +2,34 @@
 
 ## Why this file exists
 
-The initial product discovery happened conversationally with Brent and Shandon.
-
-The intended workflow is for this GitHub repository to be cloned/shared with Shandon and then continued by a different ChatGPT session. That next session may have **none of the original conversation context**.
-
-Treat this repository as the durable handoff.
+The initial product discovery happened conversationally with Brent and Shandon. Treat this repository as the durable handoff so a fresh engineering session can continue without reconstructing product discovery from chat history.
 
 ## People
 
 ### Shandon
-Basketball trainer and product/domain owner for That's Tuff Performance Training.
-
-Shandon knows the coaching workflow, drill progressions, evaluation logic, parent communication needs, and recruiting/player-development use cases.
+Basketball trainer and product/domain owner for That's Tuff Performance Training. Shandon owns coaching workflow, drill progressions, evaluation logic, parent communication needs, and recruiting/player-development use cases.
 
 ### Brent
-InnoTechByte software developer guiding the engineering process and showing Shandon how to use ChatGPT + GitHub as an AI-assisted development workflow.
+InnoTechByte software developer guiding the engineering process and the ChatGPT + GitHub workflow.
 
-The intent is not for Shandon to become a programmer before using the system. The repository and AI engineering workflow should let his basketball expertise drive product decisions while engineering structure remains durable and reviewable.
+## Product behavior distilled
 
-## What has already been learned
+The useful chain is:
 
-Do not ask the product owner to repeat these unless something conflicts.
+```text
+player goal
+-> training progression
+-> meaningful benchmark evidence
+-> periodic formal evaluation
+-> updated development plan
+-> visible progress for player/parent
+-> approved recruiting/player profile
+```
 
-### Existing workflow
-Shandon currently keeps individual client information in notes/files:
-goals;
-achievements;
-current progress toward goals;
-starting evaluation;
-reevaluations every roughly two weeks to one month;
-trainer observations;
-planning for what to do next.
+Normal training should capture meaningful results and progression points only, not every drill or repetition. Trainer judgment remains authoritative for formal ratings.
 
-He also evaluates players at camps.
+## Evaluation model
 
-### Product outcome
-He wants a better system that:
-tracks long-term development;
-demonstrates progress to parents;
-can present a complete player profile to college coaches;
-includes highlight video;
-preserves the evidence behind progress;
-keeps private trainer notes hidden from parents.
-
-### Evaluation model
 Current documented scale:
 
 1. Building Foundation
@@ -54,112 +38,25 @@ Current documented scale:
 4. Getting Tuff
 5. Tuff
 
-Current documented 12-category evaluation:
-Ball Control
-Finishing
-Shooting
-Decision Making
-Playing Under Pressure
-Off-Ball Awareness
-On-Ball Defense
-Defensive Awareness
-Effort & Competitiveness
-Coachability
-Confidence
-Response to Mistakes
+Current default 12-category evaluation:
+- Ball Control
+- Finishing
+- Shooting
+- Decision Making
+- Playing Under Pressure
+- Off-Ball Awareness
+- On-Ball Defense
+- Defensive Awareness
+- Effort & Competitiveness
+- Coachability
+- Confidence
+- Response to Mistakes
 
-Shandon also mentioned speed/agility-type development, so these 12 are **not** assumed to be the permanent universal schema.
+These 12 categories are the MVP default template, not a permanent universal schema. Historical evaluations must preserve the template meaning used at the time.
 
-Youth/foundation athletes and advanced college/pro athletes should not necessarily use the same evaluation template.
+## Current engineering state — 2026-09-22
 
-### How ratings are supported
-Ratings are not meant to be arbitrary numbers.
-
-Shandon uses drill performance and progression benchmarks as evidence. Examples may include:
-time to complete a defined number of combinations;
-makes/attempts;
-repetitions;
-successful execution under pressure;
-progression into live/game-like contexts.
-
-However, benchmark evidence should support—not automatically replace—Shandon's coaching judgment.
-
-### Ball-control progression example
-The first progression discussed was:
-text
-stationary dribbling
--> low and waist-level control
--> crossover / between / behind
--> combinations
--> timed combination benchmark
--> hands-match-the-feet coordination
--> live defender / guide hand
--> realistic live reads / game situations
-
-This is an example proving that progressions exist. It is not yet a fully specified production drill library.
-
-### Normal training data capture
-Shandon does **not** want to log every drill/repetition.
-
-He wants to capture meaningful results and progression points only.
-
-This is an important UX constraint: data entry during training should be quick and purposeful.
-
-### Goals
-Both types are required:
-big-picture goals (example: make varsity, play college basketball);
-specific development goals (example: improve a skill/rating or pass a benchmark).
-
-### Achievements
-Flexible achievement types are desired:
-team selections;
-awards;
-offers;
-personal milestones;
-rating improvements;
-training-level milestones;
-camp recognition;
-other meaningful accomplishments.
-
-### Access model
-Shandon wants parent logins.
-
-Parents should see their child's development information but **not** Shandon's private notes.
-
-Shandon also described separate trainer-only planning notes used to remember what to work on in the next session.
-
-The coach/recruiter experience should be a polished shareable profile containing approved information such as:
-player photo;
-age/class year;
-height;
-position;
-school/team;
-ratings/progress;
-strengths/development areas;
-achievements;
-comments appropriate for sharing;
-stats;
-highlight video;
-social/recruiting/contact information as appropriate.
-
-Exact public/share-link privacy rules remain undecided.
-
-## Product behavior distilled
-
-The useful chain is:
-text
-player goal
--> training progression
--> meaningful benchmark evidence
--> periodic formal evaluation
--> updated development plan
--> visible progress for player/parent
--> approved recruiting/player profile
-The system should make progress understandable without turning normal training into constant data entry.
-
-## Current engineering state — 2026-09-18
-
-The real MVP stack is now active:
+The real MVP stack is active:
 - Next.js + TypeScript;
 - Prisma 7;
 - PostgreSQL 16 on Cloud SQL;
@@ -173,50 +70,29 @@ The real MVP stack is now active:
 Cloud Run service:
 `https://player-development-rx4wq25jsq-uc.a.run.app`
 
-The web service is browser-accessible at the Cloud Run IAM layer. That does **not** mean player data is public. Sensitive APIs must verify Firebase ID tokens and apply application authorization before returning data.
+Trainer authentication has been verified end-to-end. Real player creation, profile data, baseline evaluation, normal-session persistence, Quick Logs, results/athletic testing, and related trainer workflows are connected to Cloud SQL.
 
-Safe sample routes contain fake data only:
-- `/preview`
-- `/preview/session`
-- `/preview/baseline`
-- `/preview/reevaluation`
+## Reevaluation + development timeline batch
 
-The current trainer sample routes are:
-- `/trainer/session`
-- `/trainer/evaluation/new`
-- `/trainer/evaluation/reevaluate`
+PR #27 implements the next Phase 2 increment and has passed CI. Production deployment and hands-on acceptance are still required before the README roadmap items should be treated as fully verified.
 
-Trainer routes are wrapped in a Firebase client auth gate. The server has an authenticated `/api/auth/me` endpoint that verifies the Firebase ID token with Firebase Admin, resolves the app User, binds an invited email to its Firebase UID on first successful login, and returns the app role.
+Implemented behavior:
+- the player profile exposes a Reevaluation action after a baseline exists;
+- reevaluation loads the athlete's latest saved evaluation rather than sample data;
+- the previous evaluation remains unchanged;
+- meaningful ProgressEvent/Quick Log evidence since the previous evaluation is surfaced during reevaluation;
+- the trainer chooses new 1–5 ratings and may add trainer-only rating notes;
+- saving creates a brand-new Evaluation record using the same historical template;
+- saving separately closes the old active DevelopmentFocus and creates the updated focus;
+- the updated short-term development goal is saved as a new development goal;
+- the player profile now includes a chronological development timeline combining formal evaluations, meaningful progress events, athletic tests, and achievements.
 
-The application User table now includes nullable unique `firebaseUid`; its production migration has been applied successfully through the Cloud Run migration job.
-
-Trainer authentication is **not yet marked complete** because a real trainer account has not been bootstrapped and successfully signed in end-to-end.
-
-## Infrastructure / database verification
-
-Verified production deployment order:
-1. GitHub Actions authenticates to Google Cloud with Workload Identity Federation;
-2. container is built and pushed to Artifact Registry;
-3. Cloud Run migration job is updated with runtime service account, Cloud SQL attachment, and Secret Manager password;
-4. `prisma migrate deploy` completes against Cloud SQL;
-5. the web service deploys;
-6. Cloud Run service verification succeeds.
-
-The database contains the MVP schema and seeded That's Tuff Default Evaluation v1 template.
+The reevaluation API validates the 1–5 range and requires an existing baseline, 2–3 priorities, and an updated short-term goal.
 
 ## Validated trainer workflows
 
 ### Normal training session
-At session open show:
-- today's main focus;
-- quick persistent coach-note tags;
-- current development focus;
-- last meaningful result;
-- active goals;
-- editable practice plan;
-- Quick Log.
-
-Quick Log should take roughly 10–20 seconds and capture only meaningful evidence such as shooting results, dribbling results, drill progression, goal checks, or important observations. Each entry captures the next meaning: goal met, keep progressing, revisit next session, or change focus.
+At session open prioritize today's focus, persistent coach tags, current development focus, last meaningful result, active goals, editable practice plan, and a 10–20 second Quick Log. Quick Logs capture meaningful evidence and what it means next.
 
 ### New athlete / baseline
 Three-step flow:
@@ -263,35 +139,18 @@ Identity: Google Identity Platform / Firebase Authentication.
 
 Authorization: application-controlled User.role plus GuardianPlayer relationships.
 
-Flow:
-1. browser signs in with Firebase;
-2. browser receives Firebase ID token;
-3. protected API receives ID token as Bearer token;
-4. Firebase Admin verifies it server-side;
-5. verified email/UID maps to the app User row;
-6. role and player relationships decide authorization;
-7. parent queries use the parent-safe Prisma allowlist.
-
-Current MVP login UI supports email/password. Public sample preview pages require no sign-in because they contain no real client data.
+Protected APIs verify Firebase ID tokens server-side and then apply application role/relationship authorization. Do not auto-create arbitrary signed-in Firebase users as application users.
 
 ## Next action
 
-Bootstrap the first trainer account:
-1. get from Shandon the exact email he wants to use as his trainer login;
-2. create or seed an application User with that email and role TRAINER;
-3. have Shandon create the matching email/password user in Identity Platform (or add an admin-assisted invitation flow later);
-4. sign in through `/login`;
-5. verify `/api/auth/me` binds the Firebase UID and returns TRAINER;
-6. only then check off Trainer authentication in README.
+Finish PR #27 documentation, let CI verify the final PR head, squash-merge only after required checks pass, then verify the main-branch Deploy to Cloud Run workflow including the Verify deployed service step. After successful deployment, Shandon should hands-on test one existing athlete by completing a reevaluation and confirming both the old and new evaluations remain represented in history, then review the chronological development timeline for evaluation, Quick Log/result, athletic-test, and achievement entries.
 
-After trainer auth is verified, connect Player create/edit and baseline evaluation to real Cloud SQL persistence.
+After this acceptance pass, continue the Phase 2 trainer workflow from the first eligible incomplete README item, with Achievements and Assigned Work as the next product capabilities unless an earlier implemented-but-unverified item still needs acceptance.
 
 ## Engineering guidance
 
 Do not confuse AI-assisted development with the application needing runtime AI. The MVP is deterministic CRUD/workflow/reporting/authorization.
 
-Do not mark roadmap work complete just because code exists. Require verification. Read README first, update it after verified milestones, and leave its Next action accurate.
+Do not mark roadmap work complete just because code exists. Require verification. Keep README status/checklists and this handoff aligned with evidence.
 
-Do not expose trainer-private data in parent APIs. Every future protected API must verify Firebase identity and server-side authorization.
-
-Do not auto-create arbitrary signed-in Firebase users as application users. Accounts must be explicitly invited/created in the application so a random authenticated Firebase user cannot gain access.
+Historical evaluations must never be overwritten. Historical benchmark/progress results must remain attributable to date/session/context. Trainer-private data must never be exposed through parent APIs.
