@@ -71,6 +71,35 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
       const tag = await prisma.playerCoachTag.update({ where: { id: String(body.tagId), playerId: id }, data: { isActive: false } });
       return NextResponse.json({ tag });
     }
+    if (body.action === "addAchievement") {
+      const title = String(body.title ?? "").trim();
+      if (!title) return NextResponse.json({ error: "Achievement title is required." }, { status: 400 });
+      const allowedTypes = ["TEAM_SELECTION","AWARD","OFFER","PERSONAL_MILESTONE","RATING_IMPROVEMENT","TRAINING_MILESTONE","CAMP_RECOGNITION","OTHER"] as const;
+      const requestedType = String(body.type ?? "OTHER");
+      const type = allowedTypes.includes(requestedType as (typeof allowedTypes)[number]) ? requestedType as (typeof allowedTypes)[number] : "OTHER";
+      const achievement = await prisma.achievement.create({ data: { playerId: id, title, type, description: String(body.description ?? "").trim() || null, achievedAt: parseOptionalDate(body.achievedAt) ?? new Date() } });
+      return NextResponse.json({ achievement });
+    }
+    if (body.action === "deleteAchievement") {
+      await prisma.achievement.delete({ where: { id: String(body.achievementId), playerId: id } });
+      return NextResponse.json({ ok: true });
+    }
+    if (body.action === "addAssignedWork") {
+      const title = String(body.title ?? "").trim();
+      if (!title) return NextResponse.json({ error: "Assigned work title is required." }, { status: 400 });
+      const work = await prisma.assignedWork.create({ data: { playerId: id, title, description: String(body.description ?? "").trim() || null, dueAt: parseOptionalDate(body.dueAt) } });
+      return NextResponse.json({ work });
+    }
+    if (body.action === "updateAssignedWork") {
+      const status = String(body.status ?? "");
+      if (!["ASSIGNED","IN_PROGRESS","COMPLETED","ARCHIVED"].includes(status)) return NextResponse.json({ error: "Invalid work status." }, { status: 400 });
+      const work = await prisma.assignedWork.update({ where: { id: String(body.workId), playerId: id }, data: { status: status as "ASSIGNED"|"IN_PROGRESS"|"COMPLETED"|"ARCHIVED", completedAt: status === "COMPLETED" ? new Date() : null } });
+      return NextResponse.json({ work });
+    }
+    if (body.action === "deleteAssignedWork") {
+      await prisma.assignedWork.delete({ where: { id: String(body.workId), playerId: id } });
+      return NextResponse.json({ ok: true });
+    }
     if (body.action === "addNote") {
       const noteBody = String(body.body ?? "").trim();
       if (!noteBody) return NextResponse.json({ error: "Note is required." }, { status: 400 });
