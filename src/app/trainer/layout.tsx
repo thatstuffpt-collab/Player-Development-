@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ReactNode } from "react";
 import { TrainerAuthGate } from "@/components/auth/trainer-auth-gate";
+import { MobileTrainerNav } from "@/components/trainer/mobile-trainer-nav";
 import "./players.css";
 
 export default function TrainerLayout({ children }: { children: ReactNode }) {
@@ -13,15 +14,11 @@ export default function TrainerLayout({ children }: { children: ReactNode }) {
           <Link href="/trainer/players">Players</Link>
           <Link href="/trainer/evaluate">Evaluate</Link>
           <Link href="/trainer/drills">Drills</Link>
+          <Link href="/trainer/practice-plans">Practice Plans</Link>
         </div>
       </nav>
       {children}
-      <nav className="trainer-mobile-nav" aria-label="Mobile trainer navigation">
-        <Link href="/trainer/today"><span aria-hidden="true">⌂</span><strong>Today</strong></Link>
-        <Link href="/trainer/players"><span aria-hidden="true">◉</span><strong>Players</strong></Link>
-        <Link href="/trainer/evaluate"><span aria-hidden="true">✓</span><strong>Evaluate</strong></Link>
-        <Link href="/trainer/drills"><span aria-hidden="true">▦</span><strong>Drills</strong></Link>
-      </nav>
+      <MobileTrainerNav />
     </TrainerAuthGate>
   );
 }
