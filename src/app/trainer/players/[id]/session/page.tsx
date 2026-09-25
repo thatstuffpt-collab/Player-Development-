@@ -4,9 +4,10 @@ import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { authenticatedFetch } from "@/lib/authenticated-fetch";
+import { drillLibrary } from "@/domain/drills/master-drill-library";
 import styles from "./session.module.css";
 
-type PlanDrill = { id?: string; title: string; notes: string; focusArea?: string | null };
+type PlanDrill = { id?: string; title: string; notes: string; focusArea?: string | null; canonicalDrillName?: string; measurementType?: string };
 type PlanSection = { id: number; title: string; notes: string; focusArea?: string | null; drills: PlanDrill[] };
 type QuickLog = {
   id: string;
@@ -122,6 +123,10 @@ export default function RealPlayerSessionPage() {
   const [nextFocus, setNextFocus] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [pickerSectionId, setPickerSectionId] = useState<number | null>(null);
+  const [drillSearch, setDrillSearch] = useState("");
+  const [improvisedDrill, setImprovisedDrill] = useState("");
+  const drillMatches = useMemo(() => { const q=drillSearch.trim().toLowerCase(); if(!q) return drillLibrary.slice(0,12); return drillLibrary.filter(d=>d.name.toLowerCase().includes(q)||d.primaryCategory.toLowerCase().includes(q)||d.tags.some(t=>t.toLowerCase().includes(q))).slice(0,12); }, [drillSearch]);
 
   useEffect(() => {
     let cancelled = false;
@@ -165,8 +170,17 @@ export default function RealPlayerSessionPage() {
     setPlan((current) => [...current, { id, title: "New Section", notes: "", drills: [] }]);
   }
 
-  function addDrill(sectionId: number) {
-    setPlan((current) => current.map((section) => section.id === sectionId ? { ...section, drills: [...section.drills, { title: "New drill", notes: "", focusArea: section.focusArea }] } : section));
+  function openDrillPicker(sectionId: number) {
+    setPickerSectionId(sectionId); setDrillSearch(""); setImprovisedDrill("");
+  }
+  function addLibraryDrill(sectionId: number, name: string, measurementType?: string) {
+    setPlan(current=>current.map(section=>section.id===sectionId?{...section,drills:[...section.drills,{title:name,notes:"",focusArea:section.focusArea,canonicalDrillName:name,measurementType}]}:section));
+    setPickerSectionId(null); setDrillSearch("");
+  }
+  function addImprovisedDrill(sectionId: number) {
+    const name=improvisedDrill.trim(); if(!name)return;
+    setPlan(current=>current.map(section=>section.id===sectionId?{...section,drills:[...section.drills,{title:name,notes:"",focusArea:section.focusArea}]}:section));
+    setPickerSectionId(null); setImprovisedDrill("");
   }
 
   async function startSession() {
@@ -387,7 +401,7 @@ export default function RealPlayerSessionPage() {
                         <button onClick={() => setPlan((current) => current.map((item) => item.id === section.id ? { ...item, drills: item.drills.filter((_, i) => i !== drillIndex) } : item))}>Remove</button>
                       </div>
                     ))}
-                    <button className={styles.smallButton} onClick={() => addDrill(section.id)}>+ Add drill</button>
+                    <button className={styles.smallButton} onClick={() => openDrillPicker(section.id)}>+ Add drill</button>{pickerSectionId===section.id&&<div className={styles.drillPicker}><input autoFocus placeholder="Search Drill Library..." value={drillSearch} onChange={e=>setDrillSearch(e.target.value)}/><div className={styles.drillPickerResults}>{drillMatches.map(d=><button type="button" key={d.name} onClick={()=>addLibraryDrill(section.id,d.name,d.measurementType)}><strong>{d.name}</strong><small>{d.primaryCategory}{d.measurable&&d.measurementType?` · ${d.measurementType}`:""}</small></button>)}</div><div className={styles.improvisedRow}><input placeholder="Custom / improvised drill" value={improvisedDrill} onChange={e=>setImprovisedDrill(e.target.value)}/><button type="button" disabled={!improvisedDrill.trim()} onClick={()=>addImprovisedDrill(section.id)}>Add custom</button></div></div>}
                   </div>
                 </article>
               ))}
