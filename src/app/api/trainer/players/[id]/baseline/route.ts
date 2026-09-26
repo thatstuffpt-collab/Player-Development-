@@ -12,7 +12,7 @@ export async function POST(
   context: { params: Promise<{ id: string }> },
 ) {
   try {
-    await requireAppUser(request, ["TRAINER", "ADMIN"]);
+    const appUser = await requireAppUser(request, ["TRAINER", "ADMIN"]);
     const { id: playerId } = await context.params;
     const body = await request.json();
     const priorities = Array.isArray(body.priorities)
@@ -72,6 +72,7 @@ export async function POST(
           where: { email: guardianEmail },
           update: { displayName: guardianName ?? undefined },
           create: {
+            tenantId: appUser.tenantId,
             email: guardianEmail,
             displayName: guardianName,
             role: "GUARDIAN",

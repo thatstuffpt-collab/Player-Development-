@@ -19,10 +19,10 @@ function parseOptionalInt(value: unknown) {
 
 export async function GET(request: Request) {
   try {
-    await requireAppUser(request, ["TRAINER", "ADMIN"]);
+    const user = await requireAppUser(request, ["TRAINER", "ADMIN"]);
     const prisma = getPrisma();
     const players = await prisma.player.findMany({
-      where: { archivedAt: null },
+      where: { tenantId: user.tenantId, archivedAt: null },
       orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
       select: {
         id: true,
@@ -54,7 +54,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    await requireAppUser(request, ["TRAINER", "ADMIN"]);
+    const user = await requireAppUser(request, ["TRAINER", "ADMIN"]);
     const body = await request.json();
     const firstName = String(body.firstName ?? "").trim();
     const lastName = String(body.lastName ?? "").trim();
@@ -69,6 +69,7 @@ export async function POST(request: Request) {
     const prisma = getPrisma();
     const player = await prisma.player.create({
       data: {
+        tenantId: user.tenantId,
         firstName,
         lastName,
         preferredName: String(body.preferredName ?? "").trim() || null,
