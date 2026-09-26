@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { AuthError, requireAppUser } from "@/domain/authorization/identity";
+import { requireTenantPlayer, tenantPlayerWhere } from "@/domain/authorization/tenant";
 import { getPrisma } from "@/lib/db";
 
 export const runtime = "nodejs";
@@ -21,12 +22,12 @@ export async function GET(
   context: { params: Promise<{ id: string }> },
 ) {
   try {
-    await requireAppUser(request, ["TRAINER", "ADMIN"]);
+    const user = await requireAppUser(request, ["TRAINER", "ADMIN"]);
     const { id } = await context.params;
     const prisma = getPrisma();
 
-    const player = await prisma.player.findUnique({
-      where: { id },
+    const player = await prisma.player.findFirst({
+      where: tenantPlayerWhere(user, id),
       select: {
         id: true,
         firstName: true,
@@ -89,18 +90,14 @@ export async function POST(
   context: { params: Promise<{ id: string }> },
 ) {
   try {
-    await requireAppUser(request, ["TRAINER", "ADMIN"]);
+    const user = await requireAppUser(request, ["TRAINER", "ADMIN"]);
     const { id: playerId } = await context.params;
-    const body = await request.json();
-    const prisma = getPrisma();
-
-    const existingPlayer = await prisma.player.findFirst({
-      where: { id: playerId, archivedAt: null },
-      select: { id: true },
-    });
-    if (!existingPlayer) {
+    const existingPlayer = await requireTenantPlayer(user, playerId);
+    if (existingPlayer.archivedAt) {
       return NextResponse.json({ error: "Player not found." }, { status: 404 });
     }
+    const body = await request.json();
+    const prisma = getPrisma();
 
     const sections = Array.isArray(body.sections) ? body.sections : [];
     if (!sections.length) {
