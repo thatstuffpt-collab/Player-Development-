@@ -22,3 +22,23 @@ export async function requireTenantPlayer(
 
   return player;
 }
+
+export async function requireTenantSession(
+  user: Pick<User, "tenantId">,
+  sessionId: string,
+) {
+  const prisma = getPrisma();
+  const session = await prisma.trainingSession.findFirst({
+    where: {
+      id: sessionId,
+      player: { tenantId: user.tenantId },
+    },
+    select: { id: true, playerId: true },
+  });
+
+  if (!session) {
+    throw new AuthError("Session not found.", 404);
+  }
+
+  return session;
+}
