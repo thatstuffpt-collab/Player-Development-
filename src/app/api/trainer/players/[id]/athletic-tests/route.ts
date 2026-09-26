@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { AuthError, requireAppUser } from "@/domain/authorization/identity";
+import { requireTenantPlayer } from "@/domain/authorization/tenant";
 import { getPrisma } from "@/lib/db";
 
 export const runtime = "nodejs";
@@ -24,8 +25,9 @@ function slug(value: string) {
 
 export async function GET(request: Request, context: { params: Promise<{ id: string }> }) {
   try {
-    await requireAppUser(request, ["TRAINER", "ADMIN"]);
+    const user = await requireAppUser(request, ["TRAINER", "ADMIN"]);
     const { id } = await context.params;
+    await requireTenantPlayer(user, id);
     const prisma = getPrisma();
     const tests = await prisma.athleticTest.findMany({ where: { playerId: id }, orderBy: { testedAt: "asc" } });
     return NextResponse.json({ tests });
@@ -38,8 +40,10 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
 
 export async function POST(request: Request, context: { params: Promise<{ id: string }> }) {
   try {
-    await requireAppUser(request, ["TRAINER", "ADMIN"]);
+    const user = await requireAppUser(request, ["TRAINER", "ADMIN"]);
     const { id } = await context.params;
+    const player = await requireTenantPlayer(user, id);
+    if (player.archivedAt) return NextResponse.json({ error: "Player not found." }, { status: 404 });
     const body = await request.json();
     const value = Number(body.value);
     if (!Number.isFinite(value)) return NextResponse.json({ error: "Enter a valid test result." }, { status: 400 });
@@ -51,9 +55,6 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
     if (!testName) return NextResponse.json({ error: "Choose or name a test." }, { status: 400 });
 
     const prisma = getPrisma();
-    const player = await prisma.player.findFirst({ where: { id, archivedAt: null }, select: { id: true } });
-    if (!player) return NextResponse.json({ error: "Player not found." }, { status: 404 });
-
     const test = await prisma.athleticTest.create({
       data: {
         playerId: id,
