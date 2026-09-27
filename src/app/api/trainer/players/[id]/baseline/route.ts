@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { AuthError, requireAppUser } from "@/domain/authorization/identity";
+import { requireTenantPlayer } from "@/domain/authorization/tenant";
 import { getPrisma } from "@/lib/db";
 
 export const runtime = "nodejs";
@@ -14,6 +15,10 @@ export async function POST(
   try {
     const appUser = await requireAppUser(request, ["TRAINER", "ADMIN"]);
     const { id: playerId } = await context.params;
+    const player = await requireTenantPlayer(appUser, playerId);
+    if (player.archivedAt) {
+      return NextResponse.json({ error: "Player not found." }, { status: 404 });
+    }
     const body = await request.json();
     const priorities = Array.isArray(body.priorities)
       ? body.priorities.map(String).filter(Boolean).slice(0, 3)
@@ -68,6 +73,14 @@ export async function POST(
       });
 
       if (guardianEmail) {
+        const existingGuardian = await tx.user.findUnique({
+          where: { email: guardianEmail },
+          select: { id: true, tenantId: true },
+        });
+        if (existingGuardian && existingGuardian.tenantId !== appUser.tenantId) {
+          throw new AuthError("This guardian account belongs to another training organization.", 409);
+        }
+
         const guardian = await tx.user.upsert({
           where: { email: guardianEmail },
           update: { displayName: guardianName ?? undefined },
