@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { AuthError, requireAppUser } from "@/domain/authorization/identity";
+import { requireTenantPlayer, tenantPlayerWhere } from "@/domain/authorization/tenant";
 import { getPrisma } from "@/lib/db";
 
 export const runtime = "nodejs";
@@ -18,11 +19,11 @@ function parseOptionalInt(value: unknown) {
 
 export async function GET(request: Request, context: { params: Promise<{ id: string }> }) {
   try {
-    await requireAppUser(request, ["TRAINER", "ADMIN"]);
+    const user = await requireAppUser(request, ["TRAINER", "ADMIN"]);
     const { id } = await context.params;
     const prisma = getPrisma();
-    const player = await prisma.player.findUnique({
-      where: { id },
+    const player = await prisma.player.findFirst({
+      where: tenantPlayerWhere(user, id),
       include: {
         goals: { orderBy: { createdAt: "desc" } },
         developmentFocuses: { orderBy: { startedAt: "desc" } },
@@ -46,8 +47,10 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
 
 export async function PATCH(request: Request, context: { params: Promise<{ id: string }> }) {
   try {
-    await requireAppUser(request, ["TRAINER", "ADMIN"]);
+    const user = await requireAppUser(request, ["TRAINER", "ADMIN"]);
     const { id } = await context.params;
+    const existingPlayer = await requireTenantPlayer(user, id);
+    if (existingPlayer.archivedAt) return NextResponse.json({ error: "Player not found." }, { status: 404 });
     const body = await request.json();
     const prisma = getPrisma();
 
@@ -134,8 +137,9 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
 
 export async function DELETE(request: Request, context: { params: Promise<{ id: string }> }) {
   try {
-    await requireAppUser(request, ["TRAINER", "ADMIN"]);
+    const user = await requireAppUser(request, ["TRAINER", "ADMIN"]);
     const { id } = await context.params;
+    await requireTenantPlayer(user, id);
     const prisma = getPrisma();
     const url = new URL(request.url);
     if (url.searchParams.get("permanent") === "true") {
