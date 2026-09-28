@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { AuthError, requireAppUser } from "@/domain/authorization/identity";
+import { requireTenantSession } from "@/domain/authorization/tenant";
 import { getPrisma } from "@/lib/db";
 
 export const runtime = "nodejs";
@@ -32,8 +33,9 @@ export async function PATCH(
   context: { params: Promise<{ id: string; logId: string }> },
 ) {
   try {
-    await requireAppUser(request, ["TRAINER", "ADMIN"]);
+    const user = await requireAppUser(request, ["TRAINER", "ADMIN"]);
     const { id: sessionId, logId } = await context.params;
+    await requireTenantSession(user, sessionId);
     const body = await request.json();
     const prisma = getPrisma();
 

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { AuthError, requireAppUser } from "@/domain/authorization/identity";
+import { requireTenantSession } from "@/domain/authorization/tenant";
 import { getPrisma } from "@/lib/db";
 
 export const runtime = "nodejs";
@@ -32,16 +33,11 @@ export async function POST(
   context: { params: Promise<{ id: string }> },
 ) {
   try {
-    await requireAppUser(request, ["TRAINER", "ADMIN"]);
+    const user = await requireAppUser(request, ["TRAINER", "ADMIN"]);
     const { id: sessionId } = await context.params;
+    const session = await requireTenantSession(user, sessionId);
     const body = await request.json();
     const prisma = getPrisma();
-
-    const session = await prisma.trainingSession.findUnique({
-      where: { id: sessionId },
-      select: { id: true, playerId: true },
-    });
-    if (!session) return NextResponse.json({ error: "Session not found." }, { status: 404 });
 
     const result = asText(body.result);
     const notes = asText(body.notes);

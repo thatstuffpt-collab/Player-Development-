@@ -76,19 +76,34 @@ enum ProgressNextStep {
   CHANGE_FOCUS
 }
 
+model Tenant {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  users     User[]
+  players   Player[]
+}
+
 model User {
   id              String           @id @default(cuid())
+  tenantId        String
   firebaseUid     String?          @unique
   email           String           @unique
   displayName     String?
   role            UserRole
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
+  tenant          Tenant           @relation(fields: [tenantId], references: [id], onDelete: Restrict)
   guardianPlayers GuardianPlayer[]
+
+  @@index([tenantId, role])
 }
 
 model Player {
   id                  String             @id @default(cuid())
+  tenantId            String
   firstName           String
   lastName            String
   preferredName       String?
@@ -104,6 +119,7 @@ model Player {
   archivedAt          DateTime?
   createdAt           DateTime           @default(now())
   updatedAt           DateTime           @updatedAt
+  tenant              Tenant             @relation(fields: [tenantId], references: [id], onDelete: Restrict)
   guardians           GuardianPlayer[]
   goals               Goal[]
   evaluations         Evaluation[]
@@ -115,6 +131,8 @@ model Player {
   trainingSessions    TrainingSession[]
   coachTags           PlayerCoachTag[]
   athleticTests       AthleticTest[]
+
+  @@index([tenantId, archivedAt])
 }
 
 model GuardianPlayer {
@@ -214,7 +232,7 @@ model ProgressEvent {
   category           String
   title              String
   result             String
-  spot                String?
+  spot               String?
   context            String?
   notes              String?
   nextStep           ProgressNextStep?
@@ -340,20 +358,19 @@ model PracticePlanItem {
   @@index([parentItemId])
 }
 
-
 model AthleticTest {
-  id         String   @id @default(cuid())
-  playerId   String
-  category   String
-  testKey    String
-  testName   String
-  value      Float
-  unit       String
-  lowerIsBetter Boolean @default(false)
-  notes      String?
-  testedAt   DateTime @default(now())
-  createdAt  DateTime @default(now())
-  player     Player   @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  id            String   @id @default(cuid())
+  playerId      String
+  category      String
+  testKey       String
+  testName      String
+  value         Float
+  unit          String
+  lowerIsBetter Boolean  @default(false)
+  notes         String?
+  testedAt      DateTime @default(now())
+  createdAt     DateTime @default(now())
+  player        Player   @relation(fields: [playerId], references: [id], onDelete: Cascade)
 
   @@index([playerId, testedAt])
   @@index([playerId, testKey])

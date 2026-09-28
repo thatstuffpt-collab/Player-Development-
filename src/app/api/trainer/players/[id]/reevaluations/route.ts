@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { AuthError, requireAppUser } from "@/domain/authorization/identity";
+import { requireTenantPlayer } from "@/domain/authorization/tenant";
 import { getPrisma } from "@/lib/db";
 
 export const runtime = "nodejs";
@@ -7,8 +8,10 @@ export const dynamic = "force-dynamic";
 
 export async function POST(request: Request, context: { params: Promise<{ id: string }> }) {
   try {
-    await requireAppUser(request, ["TRAINER", "ADMIN"]);
+    const user = await requireAppUser(request, ["TRAINER", "ADMIN"]);
     const { id: playerId } = await context.params;
+    const player = await requireTenantPlayer(user, playerId);
+    if (player.archivedAt) return NextResponse.json({ error: "Player not found." }, { status: 404 });
     const body = await request.json();
     const prisma = getPrisma();
 
