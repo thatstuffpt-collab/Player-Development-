@@ -47,7 +47,7 @@ export async function requireAppUser(
 
   if (!user) {
     throw new AuthError(
-      "Your sign-in worked, but this account has not been invited to That's Tuff Player Development yet.",
+      "Your sign-in worked, but this account has not been invited to this player-development platform yet.",
       403,
     );
   }
@@ -63,6 +63,27 @@ export async function requireAppUser(
 
   if (allowedRoles && !allowedRoles.includes(user.role)) {
     throw new AuthError("You do not have access to this area.", 403);
+  }
+
+  const requestedTenantId = request.headers.get("x-organization-id")?.trim();
+  if (requestedTenantId && user.role !== "GUARDIAN") {
+    const membership = await prisma.organizationMembership.findUnique({
+      where: {
+        tenantId_userId: {
+          tenantId: requestedTenantId,
+          userId: user.id,
+        },
+      },
+      select: { tenantId: true },
+    });
+
+    if (!membership) {
+      throw new AuthError("You do not have access to this organization.", 403);
+    }
+
+    if (membership.tenantId !== user.tenantId) {
+      user = { ...user, tenantId: membership.tenantId };
+    }
   }
 
   return user;
