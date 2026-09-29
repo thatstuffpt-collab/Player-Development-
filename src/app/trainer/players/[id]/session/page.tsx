@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
+import { drillCategories, drillLibrary, type DrillDefinition } from "@/domain/drills/master-drill-library";
 import { authenticatedFetch } from "@/lib/authenticated-fetch";
 import styles from "./session.module.css";
 
@@ -85,6 +86,36 @@ function logTypeLabel(value: string) {
   return map[value] ?? "Drill result";
 }
 
+function focusAreaForDrill(drill: DrillDefinition): string | null {
+  const map: Partial<Record<DrillDefinition["primaryCategory"], string>> = {
+    "Ball Handling": "BALL_HANDLING",
+    Shooting: "SHOOTING",
+    Finishing: "FINISHING",
+    Defense: "DEFENSE",
+    Footwork: "FOOTWORK",
+    "Decision-Making / Live Play": "DECISION_MAKING",
+    Conditioning: "CONDITIONING",
+  };
+  return map[drill.primaryCategory] ?? null;
+}
+
+function sectionSuggestedCategories(title: string) {
+  const normalized = title.toLowerCase();
+  if (normalized.includes("shoot")) return ["Shooting"];
+  if (normalized.includes("ball") || normalized.includes("handle") || normalized.includes("dribbl")) return ["Ball Handling"];
+  if (normalized.includes("finish") || normalized.includes("layup")) return ["Finishing"];
+  if (normalized.includes("defen")) return ["Defense"];
+  if (normalized.includes("footwork")) return ["Footwork"];
+  if (normalized.includes("condition")) return ["Conditioning"];
+  if (normalized.includes("warm") || normalized.includes("movement")) return ["Warm-Up / Movement Prep"];
+  if (normalized.includes("speed") || normalized.includes("agility")) return ["Speed & Agility"];
+  if (normalized.includes("strength") || normalized.includes("power") || normalized.includes("vertical")) return ["Strength / Athletic Development"];
+  if (normalized.includes("pass")) return ["Passing"];
+  if (normalized.includes("rebound")) return ["Rebounding"];
+  if (normalized.includes("live") || normalized.includes("game")) return ["Decision-Making / Live Play", "Competition / Games"];
+  return [];
+}
+
 async function fetchWorkspace(playerId: string): Promise<WorkspacePlayer> {
   const response = await authenticatedFetch(`/api/trainer/players/${playerId}/sessions`);
   const payload = await response.json();
@@ -94,12 +125,10 @@ async function fetchWorkspace(playerId: string): Promise<WorkspacePlayer> {
 
 export default function RealPlayerSessionPage() {
   const params = useParams<{ id: string }>();
-  const router = useRouter();
   const [player, setPlayer] = useState<WorkspacePlayer | null>(null);
   const [session, setSession] = useState<SessionRecord | null>(null);
   const [step, setStep] = useState<"before" | "during" | "wrap">("before");
   const [plan, setPlan] = useState<PlanSection[]>(starterPlan);
-  const [sessionType, setSessionType] = useState("Basketball Skills");
   const [soreness, setSoreness] = useState("None");
   const [bodyArea, setBodyArea] = useState("");
   const [discomfort, setDiscomfort] = useState(0);
@@ -122,21 +151,16 @@ export default function RealPlayerSessionPage() {
   const [nextFocus, setNextFocus] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [librarySectionId, setLibrarySectionId] = useState<number | null>(null);
+  const [libraryQuery, setLibraryQuery] = useState("");
+  const [libraryCategory, setLibraryCategory] = useState("All");
 
   useEffect(() => {
     let cancelled = false;
-
     void fetchWorkspace(params.id)
-      .then((nextPlayer) => {
-        if (!cancelled) setPlayer(nextPlayer);
-      })
-      .catch((err) => {
-        if (!cancelled) setError(err instanceof Error ? err.message : "Could not load session workspace.");
-      });
-
-    return () => {
-      cancelled = true;
-    };
+      .then((nextPlayer) => { if (!cancelled) setPlayer(nextPlayer); })
+      .catch((err) => { if (!cancelled) setError(err instanceof Error ? err.message : "Could not load session workspace."); });
+    return () => { cancelled = true; };
   }, [params.id]);
 
   const readiness = useMemo(() => {
@@ -146,27 +170,48 @@ export default function RealPlayerSessionPage() {
   }, [bodyArea, discomfort, soreness]);
 
   const activeSection = plan.find((item) => item.id === selectedSectionId) ?? plan[0];
+  const librarySection = plan.find((section) => section.id === librarySectionId) ?? null;
   const sessionPlan = session?.practicePlan ?? [];
   const sessionSections = sessionPlan.filter((item) => item.itemType === "SECTION");
   const selectedSavedSection = sessionSections.find((item) => item.title === activeSection?.title) ?? sessionSections[0];
   const savedDrills = sessionPlan.filter((item) => item.itemType === "DRILL" && item.parentItemId === selectedSavedSection?.id);
   const selectedSavedDrill = savedDrills.find((item) => item.id === selectedDrillId);
 
-  function chooseSessionType(value: string) {
-    setSessionType(value);
-    if (value === "Athletic Performance") setPlan(athleticPlan);
-    else if (value === "Combined") setPlan([...starterPlan, ...athleticPlan.map((section, index) => ({ ...section, id: 200 + index }))]);
-    else setPlan(starterPlan);
-    setSelectedSectionId(value === "Athletic Performance" ? athleticPlan[0].id : starterPlan[0].id);
-  }
+  const filteredLibrary = useMemo(() => {
+    const query = libraryQuery.trim().toLowerCase();
+    const suggested = librarySection ? sectionSuggestedCategories(librarySection.title) : [];
+    return drillLibrary
+      .filter((drill) => libraryCategory === "All" || drill.tags.includes(libraryCategory as never))
+      .filter((drill) => !query || drill.name.toLowerCase().includes(query) || drill.tags.some((tag) => tag.toLowerCase().includes(query)))
+      .sort((a, b) => {
+        const aSuggested = a.tags.some((tag) => suggested.includes(tag)) ? 1 : 0;
+        const bSuggested = b.tags.some((tag) => suggested.includes(tag)) ? 1 : 0;
+        return bSuggested - aSuggested || a.name.localeCompare(b.name);
+      })
+      .slice(0, 24);
+  }, [libraryCategory, libraryQuery, librarySection]);
 
   function addSection() {
     const id = Date.now();
     setPlan((current) => [...current, { id, title: "New Section", notes: "", drills: [] }]);
   }
 
-  function addDrill(sectionId: number) {
-    setPlan((current) => current.map((section) => section.id === sectionId ? { ...section, drills: [...section.drills, { title: "New drill", notes: "", focusArea: section.focusArea }] } : section));
+  function addCustomDrill(sectionId: number) {
+    setPlan((current) => current.map((section) => section.id === sectionId ? { ...section, drills: [...section.drills, { title: "", notes: "", focusArea: section.focusArea }] } : section));
+  }
+
+  function openLibrary(sectionId: number) {
+    setLibrarySectionId((current) => current === sectionId ? null : sectionId);
+    setLibraryQuery("");
+    setLibraryCategory("All");
+  }
+
+  function addLibraryDrill(sectionId: number, drill: DrillDefinition) {
+    setPlan((current) => current.map((section) => section.id === sectionId ? {
+      ...section,
+      drills: [...section.drills, { title: drill.name, notes: "", focusArea: focusAreaForDrill(drill) ?? section.focusArea }],
+    } : section));
+    setLibraryQuery("");
   }
 
   async function startSession() {
@@ -369,7 +414,7 @@ export default function RealPlayerSessionPage() {
           </section>
 
           <section className={styles.panel}>
-            <div className={styles.sectionHeading}><div><span>TODAY&apos;S PLAN</span><h2>Sections + drills</h2></div><small>Quick Log will pull directly from this plan</small></div>
+            <div className={styles.sectionHeading}><div><span>TODAY&apos;S PLAN</span><h2>Build from your Library</h2></div><small>Pick existing drills or add a custom drill</small></div>
             <div className={styles.planList}>
               {plan.map((section, sectionIndex) => (
                 <article className={styles.planSection} key={section.id}>
@@ -383,11 +428,33 @@ export default function RealPlayerSessionPage() {
                     {section.drills.map((drill, drillIndex) => (
                       <div key={`${section.id}-${drillIndex}`} className={styles.drillRow}>
                         <span>Drill {drillIndex + 1}</span>
-                        <input value={drill.title} onChange={(e) => setPlan((current) => current.map((item) => item.id === section.id ? { ...item, drills: item.drills.map((d, i) => i === drillIndex ? { ...d, title: e.target.value } : d) } : item))} />
+                        <input value={drill.title} placeholder="Drill name" onChange={(e) => setPlan((current) => current.map((item) => item.id === section.id ? { ...item, drills: item.drills.map((d, i) => i === drillIndex ? { ...d, title: e.target.value } : d) } : item))} />
                         <button onClick={() => setPlan((current) => current.map((item) => item.id === section.id ? { ...item, drills: item.drills.filter((_, i) => i !== drillIndex) } : item))}>Remove</button>
                       </div>
                     ))}
-                    <button className={styles.smallButton} onClick={() => addDrill(section.id)}>+ Add drill</button>
+                    <div className={styles.addDrillActions}>
+                      <button className={styles.libraryButton} type="button" onClick={() => openLibrary(section.id)}>▦ {librarySectionId === section.id ? "Close Library" : "Add from Library"}</button>
+                      <button className={styles.smallButton} type="button" onClick={() => addCustomDrill(section.id)}>+ Custom drill</button>
+                    </div>
+                    {librarySectionId === section.id && (
+                      <div className={styles.libraryPicker}>
+                        <div className={styles.libraryPickerTop}>
+                          <label>Search Library<input autoFocus value={libraryQuery} onChange={(e) => setLibraryQuery(e.target.value)} placeholder="Start typing a drill name..." /></label>
+                          <label>Category<select value={libraryCategory} onChange={(e) => setLibraryCategory(e.target.value)}><option>All</option>{drillCategories.map((category) => <option key={category}>{category}</option>)}</select></label>
+                        </div>
+                        <p className={styles.libraryHint}>Showing {filteredLibrary.length} matches. Drills that fit “{section.title}” are shown first.</p>
+                        <div className={styles.libraryResults}>
+                          {filteredLibrary.map((drill) => (
+                            <button type="button" key={drill.name} className={styles.libraryResult} onClick={() => addLibraryDrill(section.id, drill)}>
+                              <strong>{drill.name}</strong>
+                              <span>{drill.tags.slice(0, 3).join(" · ")}{drill.measurable ? " · measurable" : ""}</span>
+                            </button>
+                          ))}
+                          {!filteredLibrary.length && <p className={styles.libraryEmpty}>No library drills match that search. Use Custom drill if this is something new.</p>}
+                        </div>
+                        <Link className={styles.libraryLink} href="/trainer/drills">Open full Library →</Link>
+                      </div>
+                    )}
                   </div>
                 </article>
               ))}
@@ -404,7 +471,7 @@ export default function RealPlayerSessionPage() {
             <form className={styles.quickForm} onSubmit={saveLog}>
               <label>Section<select value={selectedSavedSection?.id ?? ""} onChange={(e) => chooseSavedSection(e.target.value)}>{sessionSections.map((item) => <option value={item.id} key={item.id}>{item.title}</option>)}</select></label>
               <label>Drill<select value={selectedDrillId || savedDrills[0]?.id || "other"} onChange={(e) => { setSelectedDrillId(e.target.value); setSpot(""); }}>{savedDrills.map((item) => <option value={item.id} key={item.id}>{item.title}</option>)}<option value="other">Other / add drill</option></select></label>
-              {selectedDrillId === "other" && <label>Custom drill<input value={customDrill} onChange={(e) => setCustomDrill(e.target.value)} placeholder="Type the improvised drill once" /></label>}
+              {selectedDrillId === "other" && <label>Library or custom drill<input list="quick-log-drill-library" value={customDrill} onChange={(e) => setCustomDrill(e.target.value)} placeholder="Search Library or type a new drill" /><datalist id="quick-log-drill-library">{drillLibrary.map((drill) => <option key={drill.name} value={drill.name} />)}</datalist></label>}
               <label>Log type<select value={logType} onChange={(e) => setLogType(e.target.value)}><option>Drill result</option><option>Shooting result</option><option>Dribbling result</option><option>Coach observation</option><option>Goal progress</option><option>Body/readiness update</option></select></label>
               {logType === "Shooting result" && <><label>Court spot<select value={spot} onChange={(e) => setSpot(e.target.value)}><option value="">Choose spot</option>{shootingSpots.map((item) => <option key={item}>{item}</option>)}</select></label><label>Makes<input inputMode="numeric" value={makes} onChange={(e) => setMakes(e.target.value)} placeholder="7" /></label><label>Attempts<input inputMode="numeric" value={attempts} onChange={(e) => setAttempts(e.target.value)} placeholder="10" /></label></>}
               {logType === "Dribbling result" && <label>Dribbling result<input value={result} onChange={(e) => setResult(e.target.value)} placeholder="18.4 sec, 12 clean reps, 2 mistakes" /></label>}
