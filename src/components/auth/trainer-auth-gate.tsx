@@ -4,8 +4,16 @@ import { onAuthStateChanged } from "firebase/auth";
 import { usePathname, useRouter } from "next/navigation";
 import { ReactNode, useEffect, useState } from "react";
 import { firebaseAuth } from "@/lib/firebase/client";
+import { getActiveOrganizationId, setActiveOrganizationId } from "@/lib/authenticated-fetch";
 
 type AuthState = "checking" | "authorized" | "denied";
+
+type AuthPayload = {
+  user?: { role?: string };
+  activeOrganization?: { id: string } | null;
+  organizations?: Array<{ id: string }>;
+  error?: string;
+};
 
 export function TrainerAuthGate({ children }: { children: ReactNode }) {
   const router = useRouter();
@@ -16,17 +24,27 @@ export function TrainerAuthGate({ children }: { children: ReactNode }) {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(firebaseAuth, async (firebaseUser) => {
       if (!firebaseUser) {
-        router.replace(`/login?next=${encodeURIComponent(pathname || "/trainer/players")}`);
+        router.replace(`/login?next=${encodeURIComponent(pathname || "/trainer/today")}`);
         return;
       }
 
       try {
         const token = await firebaseUser.getIdToken();
-        const response = await fetch("/api/auth/me", {
-          headers: { Authorization: `Bearer ${token}` },
-          cache: "no-store",
-        });
-        const payload = await response.json();
+        const activeOrganizationId = getActiveOrganizationId();
+        const headers: Record<string, string> = { Authorization: `Bearer ${token}` };
+        if (activeOrganizationId) headers["x-organization-id"] = activeOrganizationId;
+
+        let response = await fetch("/api/auth/me", { headers, cache: "no-store" });
+        let payload = await response.json() as AuthPayload;
+
+        if (!response.ok && activeOrganizationId && response.status === 403) {
+          window.localStorage.removeItem("activeOrganizationId");
+          response = await fetch("/api/auth/me", {
+            headers: { Authorization: `Bearer ${token}` },
+            cache: "no-store",
+          });
+          payload = await response.json() as AuthPayload;
+        }
 
         if (!response.ok) {
           setMessage(payload.error ?? "This account is not authorized.");
@@ -34,10 +52,14 @@ export function TrainerAuthGate({ children }: { children: ReactNode }) {
           return;
         }
 
-        if (!(["TRAINER", "ADMIN"] as string[]).includes(payload.user.role)) {
+        if (!(["TRAINER", "ADMIN"] as string[]).includes(payload.user?.role ?? "")) {
           setMessage("This account does not have trainer access.");
           setState("denied");
           return;
+        }
+
+        if (!getActiveOrganizationId() && payload.activeOrganization?.id) {
+          setActiveOrganizationId(payload.activeOrganization.id);
         }
 
         setState("authorized");
@@ -54,7 +76,7 @@ export function TrainerAuthGate({ children }: { children: ReactNode }) {
     return (
       <main className="auth-shell">
         <section className="auth-card">
-          <p className="eyebrow">THAT&apos;S TUFF PLAYER DEVELOPMENT</p>
+          <p className="eyebrow">PLAYER DEVELOPMENT PLATFORM</p>
           <h1>Checking access…</h1>
         </section>
       </main>
