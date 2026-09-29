@@ -13,6 +13,12 @@ enum UserRole {
   ADMIN
 }
 
+enum OrganizationRole {
+  OWNER
+  ADMIN
+  TRAINER
+}
+
 enum GoalType {
   BIG_PICTURE
   DEVELOPMENT
@@ -77,28 +83,44 @@ enum ProgressNextStep {
 }
 
 model Tenant {
-  id        String   @id @default(cuid())
-  name      String
-  slug      String   @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  users     User[]
-  players   Player[]
+  id          String                   @id @default(cuid())
+  name        String
+  slug        String                   @unique
+  createdAt   DateTime                 @default(now())
+  updatedAt   DateTime                 @updatedAt
+  users       User[]
+  players     Player[]
+  memberships OrganizationMembership[]
 }
 
 model User {
-  id              String           @id @default(cuid())
+  id              String                   @id @default(cuid())
   tenantId        String
-  firebaseUid     String?          @unique
-  email           String           @unique
+  firebaseUid     String?                  @unique
+  email           String                   @unique
   displayName     String?
   role            UserRole
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
-  tenant          Tenant           @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  createdAt       DateTime                 @default(now())
+  updatedAt       DateTime                 @updatedAt
+  tenant          Tenant                   @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  memberships     OrganizationMembership[]
   guardianPlayers GuardianPlayer[]
 
   @@index([tenantId, role])
+}
+
+model OrganizationMembership {
+  id        String           @id @default(cuid())
+  tenantId  String
+  userId    String
+  role      OrganizationRole
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+  tenant    Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, userId])
+  @@index([userId, role])
 }
 
 model Player {

@@ -7,20 +7,20 @@ export default function TrainerLayout({ children }: { children: ReactNode }) {
   return (
     <TrainerAuthGate>
       <nav className="trainer-nav" aria-label="Trainer navigation">
-        <Link className="trainer-brand" href="/trainer/today">THAT&apos;S TUFF</Link>
+        <Link className="trainer-brand" href="/trainer/today">PLAYER DEVELOPMENT</Link>
         <div className="trainer-nav-links">
           <Link href="/trainer/today">Today</Link>
-          <Link href="/trainer/players">Players</Link>
-          <Link href="/trainer/evaluate">Evaluate</Link>
-          <Link href="/trainer/drills">Drills</Link>
+          <Link href="/trainer/players">Athletes</Link>
+          <Link href="/trainer/drills">Library</Link>
+          <Link href="/trainer/organization">Organization</Link>
         </div>
       </nav>
       {children}
       <nav className="trainer-mobile-nav" aria-label="Mobile trainer navigation">
         <Link href="/trainer/today"><span aria-hidden="true">⌂</span><strong>Today</strong></Link>
-        <Link href="/trainer/players"><span aria-hidden="true">◉</span><strong>Players</strong></Link>
-        <Link href="/trainer/evaluate"><span aria-hidden="true">✓</span><strong>Evaluate</strong></Link>
-        <Link href="/trainer/drills"><span aria-hidden="true">▦</span><strong>Drills</strong></Link>
+        <Link href="/trainer/players"><span aria-hidden="true">◉</span><strong>Athletes</strong></Link>
+        <Link href="/trainer/drills"><span aria-hidden="true">▦</span><strong>Library</strong></Link>
+        <Link href="/trainer/organization"><span aria-hidden="true">◎</span><strong>Organization</strong></Link>
       </nav>
     </TrainerAuthGate>
   );
