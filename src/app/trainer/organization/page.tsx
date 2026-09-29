@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { authenticatedFetch, getActiveOrganizationId, setActiveOrganizationId } from "@/lib/authenticated-fetch";
 
 type Organization = {
@@ -11,27 +12,36 @@ type Organization = {
 };
 
 export default function OrganizationPage() {
+  const router = useRouter();
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
-  async function load() {
-    const response = await authenticatedFetch("/api/trainer/organizations");
-    const payload = await response.json();
-    if (!response.ok) throw new Error(payload.error ?? "Could not load organizations.");
-    setOrganizations(payload.organizations ?? []);
-    setActiveId(getActiveOrganizationId() ?? payload.activeOrganizationId ?? null);
-  }
-
   useEffect(() => {
-    void load().catch((err) => setError(err instanceof Error ? err.message : "Could not load organizations."));
+    let cancelled = false;
+    void authenticatedFetch("/api/trainer/organizations")
+      .then(async (response) => {
+        const payload = await response.json();
+        if (!response.ok) throw new Error(payload.error ?? "Could not load organizations.");
+        return payload;
+      })
+      .then((payload) => {
+        if (cancelled) return;
+        setOrganizations(payload.organizations ?? []);
+        setActiveId(getActiveOrganizationId() ?? payload.activeOrganizationId ?? null);
+      })
+      .catch((err) => {
+        if (!cancelled) setError(err instanceof Error ? err.message : "Could not load organizations.");
+      });
+    return () => { cancelled = true; };
   }, []);
 
   function switchOrganization(organizationId: string) {
     setActiveOrganizationId(organizationId);
-    window.location.href = "/trainer/today";
+    router.push("/trainer/today");
+    router.refresh();
   }
 
   async function createOrganization(event: FormEvent<HTMLFormElement>) {
@@ -48,7 +58,8 @@ export default function OrganizationPage() {
       if (!response.ok) throw new Error(payload.error ?? "Could not create organization.");
       setName("");
       setActiveOrganizationId(payload.organization.id);
-      window.location.href = "/trainer/today";
+      router.push("/trainer/today");
+      router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not create organization.");
       setSaving(false);
