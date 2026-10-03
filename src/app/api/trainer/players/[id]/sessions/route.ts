@@ -17,6 +17,12 @@ function asDiscomfort(value: unknown) {
   return parsed;
 }
 
+function asDate(value: unknown) {
+  if (!value) return new Date();
+  const parsed = new Date(String(value));
+  return Number.isNaN(parsed.getTime()) ? new Date() : parsed;
+}
+
 export async function GET(
   request: Request,
   context: { params: Promise<{ id: string }> },
@@ -108,7 +114,8 @@ export async function POST(
       const created = await tx.trainingSession.create({
         data: {
           playerId,
-          scheduledFor: new Date(),
+          scheduledFor: asDate(body.scheduledFor),
+          startedAt: body.startNow === true ? new Date() : null,
           primaryFocus: body.primaryFocus ?? "OTHER",
           customFocus: asText(body.customFocus),
           sessionGoal: asText(body.sessionGoal),

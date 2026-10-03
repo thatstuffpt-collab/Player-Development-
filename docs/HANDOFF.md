@@ -141,11 +141,29 @@ Authorization: application-controlled User.role plus GuardianPlayer relationship
 
 Protected APIs verify Firebase ID tokens server-side and then apply application role/relationship authorization. Do not auto-create arbitrary signed-in Firebase users as application users.
 
+## Current continuation — 2026-10-03
+
+Shandon validated the Athlete Workspace V2 (Overview / Plan / Results / History) in production. The current priority is the Today Dashboard V2 and planned-workout workflow.
+
+Product decision:
+- planning a workout and starting a live session are separate actions;
+- a trainer can build and save a workout before arriving at the gym;
+- a saved workout is **Planned** until the trainer explicitly starts it;
+- starting it changes it to **In Progress**;
+- wrap-up completion changes it to **Completed**;
+- the saved practice plan must survive leaving and returning to the app;
+- Today should surface Planned and In Progress sessions for fast access.
+
+Implementation approach:
+- TrainingSession gains nullable `startedAt`;
+- the migration backfills existing sessions with `startedAt = createdAt` so historical behavior remains unchanged;
+- newly saved planned workouts keep `startedAt = null`;
+- planned workouts can be edited before start;
+- Today exposes planned workouts and in-progress sessions separately.
+
 ## Next action
 
-Finish PR #27 documentation, let CI verify the final PR head, squash-merge only after required checks pass, then verify the main-branch Deploy to Cloud Run workflow including the Verify deployed service step. After successful deployment, Shandon should hands-on test one existing athlete by completing a reevaluation and confirming both the old and new evaluations remain represented in history, then review the chronological development timeline for evaluation, Quick Log/result, athletic-test, and achievement entries.
-
-After this acceptance pass, continue the Phase 2 trainer workflow from the first eligible incomplete README item, with Achievements and Assigned Work as the next product capabilities unless an earlier implemented-but-unverified item still needs acceptance.
+Run CI for the Today Dashboard V2 / planned-workout PR. Fix ordinary failures automatically. After CI passes, deploy to Cloud Run using Shandon's explicit approval from the current development session, verify the migration and deployed-service checks, then have Shandon test: save a workout, leave the app, return later, reopen it, start it, Quick Log during training, and complete wrap-up.
 
 ## Engineering guidance
 

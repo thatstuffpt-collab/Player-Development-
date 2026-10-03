@@ -351,6 +351,7 @@ model TrainingSession {
   summary              String?
   needsMoreWork        String?
   nextSessionFocus     String?
+  startedAt            DateTime?
   completedAt          DateTime?
   createdAt            DateTime           @default(now())
   updatedAt            DateTime           @updatedAt
@@ -359,6 +360,7 @@ model TrainingSession {
   progressEvents       ProgressEvent[]
 
   @@index([playerId, scheduledFor])
+  @@index([playerId, completedAt, startedAt])
 }
 
 model PracticePlanItem {
