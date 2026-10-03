@@ -278,7 +278,7 @@ export default function RealPlayerSessionPage() {
           bodyArea,
           discomfortLevel: discomfort,
           planAdjustmentReason: adjustmentReason,
-          scheduledFor: scheduledFor || undefined,
+          scheduledFor: scheduledFor ? new Date(scheduledFor).toISOString() : undefined,
           sections: plan,
           startNow,
         }),
