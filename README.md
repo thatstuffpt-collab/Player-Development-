@@ -242,6 +242,7 @@ Checkboxes may only be marked complete when the result is implemented and verifi
 - [ ] Assigned workouts
 - [ ] Trainer-private notes
 - [ ] Mobile gym workflow usability pass
+- [ ] Planned workout workflow: save before arrival → start later → complete (implemented in Today Dashboard V2 branch; production verification pending)
 
 ### Phase 3 — Parent/guardian MVP
 
