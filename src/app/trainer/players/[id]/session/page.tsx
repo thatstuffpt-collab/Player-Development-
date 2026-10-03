@@ -23,6 +23,7 @@ type QuickLog = {
 type SessionRecord = {
   id: string;
   scheduledFor: string;
+  startedAt: string | null;
   summary: string | null;
   needsMoreWork: string | null;
   nextSessionFocus: string | null;
@@ -123,6 +124,30 @@ async function fetchWorkspace(playerId: string): Promise<WorkspacePlayer> {
   return payload.player;
 }
 
+function planFromSession(session: SessionRecord): PlanSection[] {
+  const sections = session.practicePlan.filter((item) => item.itemType === "SECTION");
+  return sections.map((section, index) => ({
+    id: 1000 + index,
+    title: section.title,
+    notes: section.notes ?? "",
+    focusArea: section.focusArea,
+    drills: session.practicePlan
+      .filter((item) => item.itemType === "DRILL" && item.parentItemId === section.id)
+      .map((drill) => ({
+        id: drill.id,
+        title: drill.title,
+        notes: drill.notes ?? "",
+        focusArea: drill.focusArea,
+      })),
+  }));
+}
+
+function localDateTimeValue(value: string) {
+  const date = new Date(value);
+  const offsetMs = date.getTimezoneOffset() * 60_000;
+  return new Date(date.getTime() - offsetMs).toISOString().slice(0, 16);
+}
+
 export default function RealPlayerSessionPage() {
   const params = useParams<{ id: string }>();
   const [player, setPlayer] = useState<WorkspacePlayer | null>(null);
@@ -154,11 +179,32 @@ export default function RealPlayerSessionPage() {
   const [librarySectionId, setLibrarySectionId] = useState<number | null>(null);
   const [libraryQuery, setLibraryQuery] = useState("");
   const [libraryCategory, setLibraryCategory] = useState("All");
+  const [scheduledFor, setScheduledFor] = useState("");
 
   useEffect(() => {
     let cancelled = false;
     void fetchWorkspace(params.id)
-      .then((nextPlayer) => { if (!cancelled) setPlayer(nextPlayer); })
+      .then((nextPlayer) => {
+        if (cancelled) return;
+        setPlayer(nextPlayer);
+        const openSession = nextPlayer.trainingSessions.find((item) => !item.completedAt);
+        if (!openSession) return;
+
+        setSession(openSession);
+        setScheduledFor(localDateTimeValue(openSession.scheduledFor));
+        const savedPlan = planFromSession(openSession);
+        if (savedPlan.length) {
+          setPlan(savedPlan);
+          setSelectedSectionId(savedPlan[0].id);
+        }
+
+        if (openSession.startedAt) {
+          const firstSection = openSession.practicePlan.find((item) => item.itemType === "SECTION");
+          const firstDrill = openSession.practicePlan.find((item) => item.itemType === "DRILL" && item.parentItemId === firstSection?.id);
+          if (firstDrill) setSelectedDrillId(firstDrill.id);
+          setStep("during");
+        }
+      })
       .catch((err) => { if (!cancelled) setError(err instanceof Error ? err.message : "Could not load session workspace."); });
     return () => { cancelled = true; };
   }, [params.id]);
@@ -214,13 +260,17 @@ export default function RealPlayerSessionPage() {
     setLibraryQuery("");
   }
 
-  async function startSession() {
+  async function saveOrStartSession(startNow: boolean) {
     setBusy(true);
     setError("");
     try {
       const currentFocus = player?.developmentFocuses[0]?.focus ?? "Player development";
-      const response = await authenticatedFetch(`/api/trainer/players/${params.id}/sessions`, {
-        method: "POST",
+      const existingPlanned = session && !session.startedAt && !session.completedAt;
+      const url = existingPlanned
+        ? `/api/trainer/sessions/${session.id}`
+        : `/api/trainer/players/${params.id}/sessions`;
+      const response = await authenticatedFetch(url, {
+        method: existingPlanned ? "PATCH" : "POST",
         body: JSON.stringify({
           primaryFocus: "OTHER",
           customFocus: currentFocus,
@@ -228,18 +278,26 @@ export default function RealPlayerSessionPage() {
           bodyArea,
           discomfortLevel: discomfort,
           planAdjustmentReason: adjustmentReason,
+          scheduledFor: scheduledFor || undefined,
           sections: plan,
+          startNow,
         }),
       });
       const payload = await response.json();
-      if (!response.ok) throw new Error(payload.error ?? "Could not start session.");
-      setSession({ ...payload.session, progressEvents: [] });
-      const firstSection = payload.session.practicePlan.find((item: SessionRecord["practicePlan"][number]) => item.itemType === "SECTION");
-      const firstDrill = payload.session.practicePlan.find((item: SessionRecord["practicePlan"][number]) => item.itemType === "DRILL" && item.parentItemId === firstSection?.id);
-      if (firstDrill) setSelectedDrillId(firstDrill.id);
-      setStep("during");
+      if (!response.ok) throw new Error(payload.error ?? (startNow ? "Could not start session." : "Could not save planned workout."));
+
+      const savedSession = { ...payload.session, progressEvents: payload.session.progressEvents ?? [] } as SessionRecord;
+      setSession(savedSession);
+      setScheduledFor(localDateTimeValue(savedSession.scheduledFor));
+
+      if (startNow) {
+        const firstSection = savedSession.practicePlan.find((item) => item.itemType === "SECTION");
+        const firstDrill = savedSession.practicePlan.find((item) => item.itemType === "DRILL" && item.parentItemId === firstSection?.id);
+        if (firstDrill) setSelectedDrillId(firstDrill.id);
+        setStep("during");
+      }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not start session.");
+      setError(err instanceof Error ? err.message : (startNow ? "Could not start session." : "Could not save planned workout."));
     } finally {
       setBusy(false);
     }
@@ -403,6 +461,13 @@ export default function RealPlayerSessionPage() {
             <article className={styles.card}><span>Last session</span><strong>{player.trainingSessions[0]?.summary || "No completed session summary yet"}</strong></article>
           </section>
 
+          {session && !session.startedAt && !session.completedAt && (
+            <section className={styles.panel}>
+              <div className={styles.sectionHeading}><div><span>PLANNED WORKOUT</span><h2>Saved and ready for later</h2></div><small>{new Date(session.scheduledFor).toLocaleString()}</small></div>
+              <p>This workout is saved. You can keep editing it now, leave the app, and come back when it is time to train.</p>
+            </section>
+          )}
+
           <section className={styles.panel}>
             <h2>Body check</h2>
             <div className={styles.formGrid}>
@@ -414,7 +479,10 @@ export default function RealPlayerSessionPage() {
           </section>
 
           <section className={styles.panel}>
-            <div className={styles.sectionHeading}><div><span>TODAY&apos;S PLAN</span><h2>Build from your Library</h2></div><small>Pick existing drills or add a custom drill</small></div>
+            <div className={styles.sectionHeading}><div><span>WORKOUT PLAN</span><h2>Build from your Library</h2></div><small>Save it now, start it when you arrive</small></div>
+            <div className={styles.formGrid}>
+              <label className={styles.full}>Planned date / time<input type="datetime-local" value={scheduledFor} onChange={(e) => setScheduledFor(e.target.value)} /></label>
+            </div>
             <div className={styles.planList}>
               {plan.map((section, sectionIndex) => (
                 <article className={styles.planSection} key={section.id}>
@@ -459,7 +527,11 @@ export default function RealPlayerSessionPage() {
                 </article>
               ))}
             </div>
-            <div className={styles.actions}><button onClick={addSection}>+ Add section</button><button className={styles.primary} onClick={startSession} disabled={busy}>{busy ? "Saving…" : "Start & save session"}</button></div>
+            <div className={styles.actions}>
+              <button onClick={addSection}>+ Add section</button>
+              <button onClick={() => saveOrStartSession(false)} disabled={busy}>{busy ? "Saving…" : session && !session.startedAt ? "Save plan changes" : "Save planned workout"}</button>
+              <button className={styles.primary} onClick={() => saveOrStartSession(true)} disabled={busy}>{busy ? "Saving…" : session && !session.startedAt ? "Start planned workout" : "Start workout now"}</button>
+            </div>
           </section>
         </div>
       )}
