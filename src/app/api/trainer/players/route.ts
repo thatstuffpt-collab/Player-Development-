@@ -39,6 +39,17 @@ export async function GET(request: Request) {
           take: 1,
           select: { focus: true },
         },
+        trainingSessions: {
+          where: { completedAt: null },
+          orderBy: { scheduledFor: "asc" },
+          take: 1,
+          select: {
+            id: true,
+            scheduledFor: true,
+            startedAt: true,
+            createdAt: true,
+          },
+        },
       },
     });
 
