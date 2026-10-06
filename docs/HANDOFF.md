@@ -172,3 +172,17 @@ Do not confuse AI-assisted development with the application needing runtime AI. 
 Do not mark roadmap work complete just because code exists. Require verification. Keep README status/checklists and this handoff aligned with evidence.
 
 Historical evaluations must never be overwritten. Historical benchmark/progress results must remain attributable to date/session/context. Trainer-private data must never be exposed through parent APIs.
+
+## Current continuation — organization acceptance preparation
+
+The next V2 milestone is the true multi-organization acceptance test. To make that test possible, the active branch adds organization staff invitations.
+
+Current implementation direction:
+- Owner/Admin can invite a trainer by email into the active organization.
+- An invited trainer gets an organization membership without needing a separate duplicate login identity.
+- First Firebase sign-in with the invited email binds the existing application User row.
+- Existing trainer users can be added to another organization through an additional membership.
+- Guardian accounts are not silently converted into trainer accounts.
+- Organization staff roster shows Active vs Invited status.
+
+After CI/deployment, acceptance should use a second organization and second trainer account, create athletes in both organizations, switch organizations, and verify that cross-organization athlete/session data cannot be read or changed.
