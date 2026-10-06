@@ -14,6 +14,11 @@ export function ParentAuthGate({ children }: { children: ReactNode }) {
   const [message, setMessage] = useState("");
 
   useEffect(() => {
+    if (pathname === "/parent/setup") {
+      setState("authorized");
+      return;
+    }
+
     const unsubscribe = onAuthStateChanged(firebaseAuth, async (firebaseUser) => {
       if (!firebaseUser) {
         router.replace(`/login?next=${encodeURIComponent(pathname || "/parent")}`);
