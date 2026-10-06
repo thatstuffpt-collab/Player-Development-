@@ -102,7 +102,7 @@ export async function GET(
         completedAt: null,
         startedAt: null,
       },
-      orderBy: [{ scheduledFor: "asc" }, { createdAt: "asc" }],
+      orderBy: [{ createdAt: "desc" }, { scheduledFor: "desc" }],
       include: sessionInclude,
     });
 
