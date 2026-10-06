@@ -242,7 +242,7 @@ Checkboxes may only be marked complete when the result is implemented and verifi
 - [ ] Assigned workouts
 - [ ] Trainer-private notes
 - [ ] Mobile gym workflow usability pass
-- [ ] Planned workout workflow: save before arrival → start later → complete (implemented in Today Dashboard V2 branch; production verification pending)
+- [ ] Planned workout workflow: save before arrival → start later → complete (implemented in PR #38 and successfully deployed to production; Shandon hands-on acceptance test pending)
 
 ### Phase 3 — Parent/guardian MVP
 
@@ -391,9 +391,35 @@ Current implementation:
 - Shandon's real trainer login has been verified end-to-end;
 - sample `/preview/*` routes contain fake data only and remain intentionally public.
 
+## Current verified state — 2026-10-06
+
+Recent production work now includes:
+
+- Athlete Workspace V2 is deployed and hands-on verified: **Overview / Plan / Results / History** all work correctly.
+- The workout builder is connected to the Drill Library so planned session sections can pull existing drills without repeated typing.
+- Today Dashboard V2 and the planned-workout workflow were merged in PR #38 and successfully deployed through Cloud Run.
+- Production deployment for PR #38 passed container build, image push, database migration, Cloud Run deployment, and final deployed-service verification.
+- Training sessions now support three distinct states: **Planned → In Progress → Completed**.
+- A trainer can build and save a workout before arriving at the gym, reopen it later, start that same saved workout without creating a duplicate session, Quick Log during training, and finish with the existing wrap-up flow.
+- Today surfaces planned workouts and sessions already in progress for quick access.
+- Existing historical sessions were preserved during the schema change by backfilling the new session-start state.
+
 ## Next action
 
-Deploy and acceptance-test the Results + Athletic Testing batch. The player profile now separates objective athletic testing from basketball Quick Log trends, preserves repeat test history, shows first/latest/best measurements and simple progress trends, supports custom athletic tests, adds permanent deletion for test/duplicate player records while retaining Archive for real client history, and fixes custom session sections so newly added sections are selectable in Quick Log. After deployment, test one basketball session plus at least two entries for the same athletic test to verify longitudinal progress.
+Shandon should complete the hands-on acceptance test for the planned-workout workflow in production:
+
+1. choose one athlete;
+2. build a workout from the Library;
+3. save it without starting;
+4. leave the app;
+5. return later and reopen the planned workout;
+6. confirm the saved sections and drills are still present and editable;
+7. start the planned workout;
+8. save at least one Quick Log;
+9. complete the wrap-up;
+10. confirm the workout moves cleanly from **Planned → In Progress → Completed** and remains represented in athlete history.
+
+If that passes, mark the planned-workout roadmap item complete and continue to the next V2 milestone: the true multi-organization acceptance test before starting the parent experience.
 
 ## Product behavior and invariants
 
