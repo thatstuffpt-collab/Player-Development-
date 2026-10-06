@@ -186,3 +186,23 @@ Current implementation direction:
 - Organization staff roster shows Active vs Invited status.
 
 After CI/deployment, acceptance should use a second organization and second trainer account, create athletes in both organizations, switch organizations, and verify that cross-organization athlete/session data cannot be read or changed.
+
+
+## Current continuation — Parent / Guardian MVP
+
+Shandon hands-on verified the true multi-organization acceptance test: a second organization/trainer can be used without mixing athlete/session data.
+
+The active Parent MVP branch now implements:
+- invited parent/guardian account setup using the email already connected by the trainer;
+- Firebase sign-in binding to the existing GUARDIAN application user;
+- a ParentAuthGate that rejects non-guardian accounts from /parent;
+- /api/parent/players and /api/parent/players/[id] with explicit GuardianPlayer relationship checks;
+- parent data returned only through parentPlayerSelect;
+- a read-only parent dashboard for current focus, goals, evaluations, trainer-shared progress, achievements, and assigned work;
+- no trainer notes, coach tags, practice plans, readiness/body check data, private evaluation notes/evidence, or non-parent-visible Quick Logs.
+
+Next engineering checkpoint:
+- run CI on the Parent MVP PR;
+- fix lint/typecheck/build failures automatically;
+- after CI is green, request production deployment approval;
+- after deployment, test with a real invited guardian account and also verify that an unrelated guardian cannot open another athlete by direct URL/API path.
