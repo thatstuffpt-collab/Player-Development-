@@ -419,7 +419,7 @@ Shandon should complete the hands-on acceptance test for the planned-workout wor
 9. complete the wrap-up;
 10. confirm the workout moves cleanly from **Planned → In Progress → Completed** and remains represented in athlete history.
 
-If that passes, mark the planned-workout roadmap item complete and continue to the next V2 milestone: the true multi-organization acceptance test before starting the parent experience.
+If that passes, mark the planned-workout roadmap item complete. The next V2 milestone is the true multi-organization acceptance test before starting the parent experience. Staff invitation support is now the active implementation step so a second trainer can be added to a separate organization for that isolation test.
 
 ## Product behavior and invariants
 
