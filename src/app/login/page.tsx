@@ -69,6 +69,10 @@ function LoginForm() {
         </form>
 
         <div className="auth-preview-link">
+          <span>Parent or guardian invited by a trainer?</span>
+          <a href="/parent/setup">Create parent account</a>
+        </div>
+        <div className="auth-preview-link">
           <span>Just reviewing the build?</span>
           <a href="/preview">Open sample screens</a>
         </div>
