@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { createUserWithEmailAndPassword, deleteUser, signOut } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
@@ -68,7 +69,7 @@ export default function ParentSetupPage() {
           {error && <p className="auth-error">{error}</p>}
           <button className="primary-button" disabled={busy}>{busy ? "Creating account…" : "Create parent account"}</button>
         </form>
-        <div className="auth-preview-link"><span>Already created your account?</span><a href="/login">Sign in</a></div>
+        <div className="auth-preview-link"><span>Already created your account?</span><Link href="/login">Sign in</Link></div>
       </section>
     </main>
   );
