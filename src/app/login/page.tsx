@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { signInWithEmailAndPassword, signOut } from "firebase/auth";
 import { useRouter, useSearchParams } from "next/navigation";
 import { FormEvent, Suspense, useState } from "react";
@@ -70,7 +71,7 @@ function LoginForm() {
 
         <div className="auth-preview-link">
           <span>Parent or guardian invited by a trainer?</span>
-          <a href="/parent/setup">Create parent account</a>
+          <Link href="/parent/setup">Create parent account</Link>
         </div>
         <div className="auth-preview-link">
           <span>Just reviewing the build?</span>
