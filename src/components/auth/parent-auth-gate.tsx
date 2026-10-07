@@ -14,10 +14,7 @@ export function ParentAuthGate({ children }: { children: ReactNode }) {
   const [message, setMessage] = useState("");
 
   useEffect(() => {
-    if (pathname === "/parent/setup") {
-      setState("authorized");
-      return;
-    }
+    if (pathname === "/parent/setup") return;
 
     const unsubscribe = onAuthStateChanged(firebaseAuth, async (firebaseUser) => {
       if (!firebaseUser) {
@@ -54,6 +51,8 @@ export function ParentAuthGate({ children }: { children: ReactNode }) {
 
     return unsubscribe;
   }, [pathname, router]);
+
+  if (pathname === "/parent/setup") return <>{children}</>;
 
   if (state === "checking") {
     return <main className="parent-shell"><section className="parent-card"><p className="parent-eyebrow">PLAYER DEVELOPMENT</p><h1>Checking access…</h1></section></main>;
