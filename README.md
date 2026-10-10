@@ -246,15 +246,15 @@ Checkboxes may only be marked complete when the result is implemented and verifi
 
 ### Phase 3 — Parent/guardian MVP
 
-- [ ] Parent/guardian authentication
-- [ ] Guardian-player relationship
-- [ ] Parent invitation/onboarding flow
-- [ ] Parent read-only player dashboard
-- [ ] Parent evaluation/progress history
-- [ ] Parent goals view
-- [ ] Parent achievements view
-- [ ] Parent assigned-work view
-- [ ] Parent current-focus view
+- [ ] Parent/guardian authentication (implemented in Parent MVP branch; production verification pending)
+- [ ] Guardian-player relationship (existing relationship model verified in trainer baseline flow; parent-side production verification pending)
+- [ ] Parent invitation/onboarding flow (implemented in Parent MVP branch; production verification pending)
+- [ ] Parent read-only player dashboard (implemented in Parent MVP branch; production verification pending)
+- [ ] Parent evaluation/progress history (implemented in Parent MVP branch; production verification pending)
+- [ ] Parent goals view (implemented in Parent MVP branch; production verification pending)
+- [ ] Parent achievements view (implemented in Parent MVP branch; production verification pending)
+- [ ] Parent assigned-work view (implemented in Parent MVP branch; production verification pending)
+- [ ] Parent current-focus view (implemented in Parent MVP branch; production verification pending)
 - [ ] Verify private trainer fields are never returned to parents
 
 ### Phase 4 — MVP verification and launch readiness
@@ -419,7 +419,7 @@ Shandon should complete the hands-on acceptance test for the planned-workout wor
 9. complete the wrap-up;
 10. confirm the workout moves cleanly from **Planned → In Progress → Completed** and remains represented in athlete history.
 
-If that passes, mark the planned-workout roadmap item complete. The next V2 milestone is the true multi-organization acceptance test before starting the parent experience. Staff invitation support is now the active implementation step so a second trainer can be added to a separate organization for that isolation test.
+The planned-workout workflow and the true multi-organization isolation test have now been hands-on verified by Shandon. The next V2 milestone is the Parent/Guardian MVP. The current branch implements invited parent account setup, authenticated parent access, explicit guardian-athlete authorization, and a read-only development dashboard that only uses the parent allowlist.
 
 ## Product behavior and invariants
 
