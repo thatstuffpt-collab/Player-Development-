@@ -41,7 +41,7 @@ export async function GET(request: Request) {
         },
         trainingSessions: {
           where: { completedAt: null },
-          orderBy: { scheduledFor: "asc" },
+          orderBy: [{ startedAt: "desc" }, { createdAt: "desc" }],
           take: 1,
           select: {
             id: true,

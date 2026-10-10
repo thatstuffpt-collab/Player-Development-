@@ -242,7 +242,7 @@ Checkboxes may only be marked complete when the result is implemented and verifi
 - [ ] Assigned workouts
 - [ ] Trainer-private notes
 - [ ] Mobile gym workflow usability pass
-- [ ] Planned workout workflow: save before arrival → start later → complete (implemented in PR #38 and successfully deployed to production; Shandon hands-on acceptance test pending)
+- [ ] Planned workout workflow: save before arrival → start later → complete (production persistence regression found during hands-on use; hotfix branch now ensures the open planned/in-progress session is loaded explicitly instead of relying on the five most recent scheduled sessions)
 
 ### Phase 3 — Parent/guardian MVP
 

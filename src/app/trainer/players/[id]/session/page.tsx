@@ -117,11 +117,16 @@ function sectionSuggestedCategories(title: string) {
   return [];
 }
 
-async function fetchWorkspace(playerId: string): Promise<WorkspacePlayer> {
+type WorkspacePayload = {
+  player: WorkspacePlayer;
+  openSession: SessionRecord | null;
+};
+
+async function fetchWorkspace(playerId: string): Promise<WorkspacePayload> {
   const response = await authenticatedFetch(`/api/trainer/players/${playerId}/sessions`);
   const payload = await response.json();
   if (!response.ok) throw new Error(payload.error ?? "Could not load session workspace.");
-  return payload.player;
+  return { player: payload.player, openSession: payload.openSession ?? null };
 }
 
 function planFromSession(session: SessionRecord): PlanSection[] {
@@ -184,10 +189,9 @@ export default function RealPlayerSessionPage() {
   useEffect(() => {
     let cancelled = false;
     void fetchWorkspace(params.id)
-      .then((nextPlayer) => {
+      .then(({ player: nextPlayer, openSession }) => {
         if (cancelled) return;
         setPlayer(nextPlayer);
-        const openSession = nextPlayer.trainingSessions.find((item) => !item.completedAt);
         if (!openSession) return;
 
         setSession(openSession);
@@ -421,8 +425,8 @@ export default function RealPlayerSessionPage() {
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.error ?? "Could not complete session.");
       setSession(payload.session);
-      const refreshedPlayer = await fetchWorkspace(params.id);
-      setPlayer(refreshedPlayer);
+      const refreshed = await fetchWorkspace(params.id);
+      setPlayer(refreshed.player);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not complete session.");
     } finally {
