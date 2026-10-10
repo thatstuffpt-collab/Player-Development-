@@ -206,3 +206,17 @@ Next engineering checkpoint:
 - fix lint/typecheck/build failures automatically;
 - after CI is green, request production deployment approval;
 - after deployment, test with a real invited guardian account and also verify that an unrelated guardian cannot open another athlete by direct URL/API path.
+
+
+## Current continuation — Account switching / logout
+
+During Parent MVP acceptance, Shandon found that the app had no visible logout control.
+
+The active branch adds:
+- a reusable Firebase sign-out control;
+- trainer logout in the desktop navigation;
+- trainer logout in the Organization page so it is reachable on mobile;
+- parent/guardian logout in the parent navigation;
+- cleanup of the active organization localStorage key on logout before returning to /login.
+
+After CI passes, deploy this change and continue Parent MVP acceptance with a fake athlete + guardian account.

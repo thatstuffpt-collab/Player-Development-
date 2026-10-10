@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ReactNode } from "react";
+import { AccountSignOutButton } from "@/components/auth/account-sign-out-button";
 import { TrainerAuthGate } from "@/components/auth/trainer-auth-gate";
 import "./players.css";
 
@@ -13,6 +14,7 @@ export default function TrainerLayout({ children }: { children: ReactNode }) {
           <Link href="/trainer/players">Athletes</Link>
           <Link href="/trainer/drills">Library</Link>
           <Link href="/trainer/organization">Organization</Link>
+          <AccountSignOutButton className="trainer-signout-button" />
         </div>
       </nav>
       {children}

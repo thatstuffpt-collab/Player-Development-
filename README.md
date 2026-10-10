@@ -419,7 +419,7 @@ Shandon should complete the hands-on acceptance test for the planned-workout wor
 9. complete the wrap-up;
 10. confirm the workout moves cleanly from **Planned → In Progress → Completed** and remains represented in athlete history.
 
-The planned-workout workflow and the true multi-organization isolation test have now been hands-on verified by Shandon. The next V2 milestone is the Parent/Guardian MVP. The current branch implements invited parent account setup, authenticated parent access, explicit guardian-athlete authorization, and a read-only development dashboard that only uses the parent allowlist.
+The planned-workout workflow and the true multi-organization isolation test have now been hands-on verified by Shandon. The Parent/Guardian MVP is deployed. The current follow-up adds visible logout controls for trainer and parent/guardian accounts so account switching can be tested cleanly without clearing browser state manually.
 
 ## Product behavior and invariants
 
