@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { AccountSignOutButton } from "@/components/auth/account-sign-out-button";
 import { authenticatedFetch, getActiveOrganizationId, setActiveOrganizationId } from "@/lib/authenticated-fetch";
 
 type Organization = {
@@ -204,6 +205,17 @@ export default function OrganizationPage() {
           <p className="support-copy">Only the organization owner or an admin can invite staff.</p>
         )}
         {inviteMessage && <p className="support-copy">{inviteMessage}</p>}
+      </section>
+
+      <section className="player-create-card">
+        <div className="section-heading">
+          <div>
+            <span className="section-kicker">ACCOUNT</span>
+            <h2>Signed-in account</h2>
+          </div>
+        </div>
+        <p className="support-copy">Log out when you need to switch to another trainer or parent/guardian account.</p>
+        <AccountSignOutButton className="ghost-button" />
       </section>
     </main>
   );
