@@ -220,3 +220,27 @@ The active branch adds:
 - cleanup of the active organization localStorage key on logout before returning to /login.
 
 After CI passes, deploy this change and continue Parent MVP acceptance with a fake athlete + guardian account.
+
+
+## Current continuation — Athlete parent/guardian management
+
+During Parent MVP acceptance, Shandon found that an existing athlete could only receive a guardian connection through baseline intake.
+
+The active branch adds:
+- a Parent / Guardian Access section on the athlete Overview tab;
+- connect guardian by optional name + email;
+- show Active vs Invited guardian account status;
+- remove a guardian relationship without deleting the guardian identity;
+- tenant-scoped trainer authorization before any guardian relationship change;
+- support for the same guardian account being connected to athletes across multiple organizations through explicit GuardianPlayer relationships;
+- a conflict guard that prevents trainer/admin identities from being silently reused as guardian accounts;
+- baseline guardian logic aligned with the same safety rules.
+
+After deployment, acceptance should:
+1. create or open a fake athlete;
+2. connect a spare parent email from the athlete Overview;
+3. confirm Invited status;
+4. log out and create the parent account with that exact email;
+5. sign in as the parent and confirm only that athlete is visible;
+6. return as trainer and confirm the guardian now shows Active;
+7. remove the guardian and verify the parent can no longer access that athlete.

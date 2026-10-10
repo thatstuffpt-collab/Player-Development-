@@ -75,22 +75,29 @@ export async function POST(
       if (guardianEmail) {
         const existingGuardian = await tx.user.findUnique({
           where: { email: guardianEmail },
-          select: { id: true, tenantId: true },
+          select: { id: true, role: true },
         });
-        if (existingGuardian && existingGuardian.tenantId !== appUser.tenantId) {
-          throw new AuthError("This guardian account belongs to another training organization.", 409);
+        if (existingGuardian && existingGuardian.role !== "GUARDIAN") {
+          throw new AuthError(
+            "That email is already used by a trainer/admin account. Use a different parent/guardian email.",
+            409,
+          );
         }
 
-        const guardian = await tx.user.upsert({
-          where: { email: guardianEmail },
-          update: { displayName: guardianName ?? undefined },
-          create: {
-            tenantId: appUser.tenantId,
-            email: guardianEmail,
-            displayName: guardianName,
-            role: "GUARDIAN",
-          },
-        });
+        const guardian = existingGuardian
+          ? await tx.user.update({
+              where: { id: existingGuardian.id },
+              data: { displayName: guardianName ?? undefined },
+            })
+          : await tx.user.create({
+              data: {
+                tenantId: appUser.tenantId,
+                email: guardianEmail,
+                displayName: guardianName,
+                role: "GUARDIAN",
+              },
+            });
+
         await tx.guardianPlayer.upsert({
           where: { guardianId_playerId: { guardianId: guardian.id, playerId } },
           update: {},

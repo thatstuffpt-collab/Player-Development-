@@ -247,7 +247,7 @@ Checkboxes may only be marked complete when the result is implemented and verifi
 ### Phase 3 — Parent/guardian MVP
 
 - [ ] Parent/guardian authentication (implemented in Parent MVP branch; production verification pending)
-- [ ] Guardian-player relationship (existing relationship model verified in trainer baseline flow; parent-side production verification pending)
+- [ ] Guardian-player relationship (profile-level add/remove management implemented; production verification pending)
 - [ ] Parent invitation/onboarding flow (implemented in Parent MVP branch; production verification pending)
 - [ ] Parent read-only player dashboard (implemented in Parent MVP branch; production verification pending)
 - [ ] Parent evaluation/progress history (implemented in Parent MVP branch; production verification pending)
@@ -419,7 +419,7 @@ Shandon should complete the hands-on acceptance test for the planned-workout wor
 9. complete the wrap-up;
 10. confirm the workout moves cleanly from **Planned → In Progress → Completed** and remains represented in athlete history.
 
-The planned-workout workflow and the true multi-organization isolation test have now been hands-on verified by Shandon. The Parent/Guardian MVP is deployed. The current follow-up adds visible logout controls for trainer and parent/guardian accounts so account switching can be tested cleanly without clearing browser state manually.
+The planned-workout workflow and the true multi-organization isolation test have now been hands-on verified by Shandon. The Parent/Guardian MVP is deployed. The current follow-up adds direct parent/guardian management to each athlete profile so an existing athlete can be connected to a family account without rerunning baseline intake.
 
 ## Product behavior and invariants
 
