@@ -27,6 +27,10 @@ body {
 
 .parent-nav a { color: var(--parent-text); text-decoration: none; font-weight: 800; }
 .parent-brand { letter-spacing: .08em; }
+.parent-nav-actions { display: flex; align-items: center; gap: 12px; }
+.parent-signout-button { border: 1px solid var(--parent-border); border-radius: 10px; background: transparent; color: var(--parent-muted); padding: 9px 12px; font: inherit; font-weight: 800; cursor: pointer; }
+.parent-signout-button:hover { border-color: var(--parent-accent); color: var(--parent-accent); }
+.parent-signout-button:disabled { opacity: .6; cursor: wait; }
 
 .parent-shell { width: min(1120px, calc(100% - 32px)); margin: 0 auto; padding: 42px 0 80px; }
 .parent-header { margin-bottom: 28px; max-width: 760px; }
@@ -57,4 +61,7 @@ body {
   .parent-shell { width: min(100% - 24px, 1120px); padding-top: 28px; }
   .parent-nav { padding: 12px; }
   .parent-brand { font-size: .82rem; }
+  .parent-nav-actions { gap: 8px; }
+  .parent-nav-actions > a { display: none; }
+  .parent-signout-button { padding: 8px 10px; }
 }
