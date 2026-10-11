@@ -220,7 +220,7 @@ Checkboxes may only be marked complete when the result is implemented and verifi
 - [x] Create initial database schema and migrations
 - [x] Add local development configuration with no committed secrets
 - [x] Add CI checks for lint, typecheck, and production build
-- [ ] Add automated application/domain tests
+- [ ] Add automated application/domain tests (initial domain/privacy suite implemented and wired into CI; verification pending)
 - [x] Add production health/readiness endpoint
 - [x] Verify Next.js application deploys successfully to Cloud Run
 - [x] Add Firebase/Identity Platform auth foundation and server-side ID-token verification
@@ -403,6 +403,10 @@ Recent production work now includes:
 - A trainer can build and save a workout before arriving at the gym, reopen it later, start that same saved workout without creating a duplicate session, Quick Log during training, and finish with the existing wrap-up flow.
 - Today surfaces planned workouts and sessions already in progress for quick access.
 - Existing historical sessions were preserved during the schema change by backfilling the new session-start state.
+
+## Current testing foundation — 2026-10-10
+
+The first automated application/domain test suite is now implemented on the active testing branch. It covers the deterministic 1–5 evaluation rating rule and parent-facing privacy allowlist invariants, including exclusion of trainer-only fields and requiring ProgressEvent.parentVisible = true. CI now runs `npm test` between typecheck and build. The roadmap item remains unchecked until the branch passes CI.
 
 ## Next action
 
