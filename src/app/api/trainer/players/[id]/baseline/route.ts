@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { AuthError, requireAppUser } from "@/domain/authorization/identity";
 import { requireTenantPlayer } from "@/domain/authorization/tenant";
 import { getPrisma } from "@/lib/db";
+import { parseEvaluationRating } from "@/domain/evaluations/rating";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -110,10 +111,7 @@ export async function POST(
               const category = String(item.category ?? "");
               const criterionId = criterionByLabel.get(category);
               if (!criterionId) throw new Error(`Unknown evaluation category: ${category}`);
-              const numericRating = item.rating === null || item.rating === undefined ? null : Number(item.rating);
-              if (numericRating !== null && (!Number.isInteger(numericRating) || numericRating < 1 || numericRating > 5)) {
-                throw new Error(`Invalid rating for ${category}`);
-              }
+              const numericRating = parseEvaluationRating(item.rating);
               return {
                 criterionId,
                 rating: numericRating,
