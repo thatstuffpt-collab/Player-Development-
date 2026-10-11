@@ -81,7 +81,35 @@ export async function GET(
       return NextResponse.json({ error: "Player not found." }, { status: 404 });
     }
 
-    return NextResponse.json({ player });
+    const sessionInclude = {
+      practicePlan: { orderBy: { sortOrder: "asc" as const } },
+      progressEvents: { orderBy: { occurredAt: "asc" as const } },
+    };
+
+    const inProgressSession = await prisma.trainingSession.findFirst({
+      where: {
+        playerId: player.id,
+        completedAt: null,
+        startedAt: { not: null },
+      },
+      orderBy: { startedAt: "desc" },
+      include: sessionInclude,
+    });
+
+    const plannedSession = inProgressSession ? null : await prisma.trainingSession.findFirst({
+      where: {
+        playerId: player.id,
+        completedAt: null,
+        startedAt: null,
+      },
+      orderBy: [{ createdAt: "desc" }, { scheduledFor: "desc" }],
+      include: sessionInclude,
+    });
+
+    return NextResponse.json({
+      player,
+      openSession: inProgressSession ?? plannedSession,
+    });
   } catch (error) {
     if (error instanceof AuthError) {
       return NextResponse.json({ error: error.message }, { status: error.status });
