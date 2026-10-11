@@ -233,7 +233,13 @@ Implemented on the active branch:
 - package.json exposes `npm test`;
 - GitHub CI now runs tests after typecheck and before the production build.
 
-Verification rule:
-- do not mark “Add automated application/domain tests” complete until CI passes with the new Test step;
-- after CI passes, update README to check off the roadmap item in the same branch, rerun CI, then request merge/deployment approval because merging to main triggers the production Cloud Run workflow.
+Verification status:
+- PR #45 passed lint, typecheck, the new automated Test step, and production build on GitHub Actions;
+- the README roadmap item is now checked off because implementation and CI verification are complete;
+- the remaining step is a final CI rerun after documentation updates;
+- if that final CI remains green and PR #45 is mergeable, request Shandon's explicit approval before merging, because merging to main triggers the production Cloud Run workflow.
+
+Immediate continuation:
+- do not merge or deploy without Shandon's approval;
+- after a successful production deployment, continue from the first eligible incomplete MVP roadmap item.
 
