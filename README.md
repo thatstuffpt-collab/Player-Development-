@@ -220,7 +220,7 @@ Checkboxes may only be marked complete when the result is implemented and verifi
 - [x] Create initial database schema and migrations
 - [x] Add local development configuration with no committed secrets
 - [x] Add CI checks for lint, typecheck, and production build
-- [ ] Add automated application/domain tests (initial domain/privacy suite implemented and wired into CI; verification pending)
+- [x] Add automated application/domain tests
 - [x] Add production health/readiness endpoint
 - [x] Verify Next.js application deploys successfully to Cloud Run
 - [x] Add Firebase/Identity Platform auth foundation and server-side ID-token verification
@@ -406,24 +406,17 @@ Recent production work now includes:
 
 ## Current testing foundation — 2026-10-10
 
-The first automated application/domain test suite is now implemented on the active testing branch. It covers the deterministic 1–5 evaluation rating rule and parent-facing privacy allowlist invariants, including exclusion of trainer-only fields and requiring ProgressEvent.parentVisible = true. CI now runs `npm test` between typecheck and build. The roadmap item remains unchecked until the branch passes CI.
+The first automated application/domain test suite is implemented and verified in CI. It covers the deterministic 1–5 evaluation rating rule and parent-facing privacy allowlist invariants, including exclusion of trainer-only fields and requiring ProgressEvent.parentVisible = true. CI now runs `npm test` between typecheck and build.
 
 ## Next action
 
-Shandon should complete the hands-on acceptance test for the planned-workout workflow in production:
+PR #45 has passed lint, typecheck, automated tests, and production build with the new application/domain test step enabled. The testing-foundation roadmap item is now verified and checked off.
 
-1. choose one athlete;
-2. build a workout from the Library;
-3. save it without starting;
-4. leave the app;
-5. return later and reopen the planned workout;
-6. confirm the saved sections and drills are still present and editable;
-7. start the planned workout;
-8. save at least one Quick Log;
-9. complete the wrap-up;
-10. confirm the workout moves cleanly from **Planned → In Progress → Completed** and remains represented in athlete history.
-
-The planned-workout workflow and the true multi-organization isolation test have now been hands-on verified by Shandon. The Parent/Guardian MVP is deployed. The current follow-up adds visible logout controls for trainer and parent/guardian accounts so account switching can be tested cleanly without clearing browser state manually.
+Next:
+1. rerun CI after this documentation update;
+2. if CI remains green and PR #45 is mergeable, request Shandon's explicit approval to merge;
+3. merging to `main` will trigger the production Cloud Run deployment;
+4. after deployment verification, continue from the first eligible incomplete MVP roadmap item.
 
 ## Product behavior and invariants
 
