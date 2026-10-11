@@ -220,3 +220,20 @@ The active branch adds:
 - cleanup of the active organization localStorage key on logout before returning to /login.
 
 After CI passes, deploy this change and continue Parent MVP acceptance with a fake athlete + guardian account.
+
+## Current continuation — automated application/domain tests
+
+The next Phase 1 foundation increment adds the repository's first automated application/domain test suite.
+
+Implemented on the active branch:
+- a shared pure evaluation-rating parser enforcing integer ratings 1–5 while preserving Not Assessed as null;
+- baseline and reevaluation APIs both use that shared deterministic rule;
+- Node's built-in test runner covers valid/invalid rating behavior;
+- privacy-invariant tests lock down the parent-facing Player allowlist, ensure trainer-only fields remain excluded, and require only explicitly parent-visible ProgressEvents;
+- package.json exposes `npm test`;
+- GitHub CI now runs tests after typecheck and before the production build.
+
+Verification rule:
+- do not mark “Add automated application/domain tests” complete until CI passes with the new Test step;
+- after CI passes, update README to check off the roadmap item in the same branch, rerun CI, then request merge/deployment approval because merging to main triggers the production Cloud Run workflow.
+
