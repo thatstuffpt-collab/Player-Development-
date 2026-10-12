@@ -243,3 +243,26 @@ Immediate continuation:
 - do not merge or deploy without Shandon's approval;
 - after a successful production deployment, continue from the first eligible incomplete MVP roadmap item.
 
+## Current continuation — player edit/archive acceptance
+
+PR #45, which added the automated application/domain testing foundation, has been merged to `main` and successfully deployed to Cloud Run. CI, automated tests, database migration, and deployed-service verification all passed.
+
+The next eligible incomplete Phase 2 roadmap item is **Player create/edit/archive**.
+
+Current implementation state:
+- player creation is already hands-on verified;
+- editing is implemented through the protected trainer player PATCH route and athlete profile edit form;
+- archiving is implemented as a soft archive using `archivedAt`, preserving the athlete's historical data;
+- active player lists exclude archived athletes;
+- permanent deletion exists separately and must not be used for acceptance testing.
+
+Immediate continuation:
+1. use an obvious test athlete;
+2. edit several profile fields and save;
+3. leave and reopen the athlete to confirm persistence;
+4. archive the athlete;
+5. confirm the athlete is removed from the active Players list;
+6. if all checks pass, mark **Player create/edit/archive** complete in README and continue to the next eligible incomplete MVP item.
+
+Do not mark the roadmap item complete until Shandon finishes the hands-on production acceptance.
+
