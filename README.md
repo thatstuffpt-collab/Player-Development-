@@ -404,19 +404,27 @@ Recent production work now includes:
 - Today surfaces planned workouts and sessions already in progress for quick access.
 - Existing historical sessions were preserved during the schema change by backfilling the new session-start state.
 
-## Current testing foundation — 2026-10-10
+## Current testing foundation — 2026-10-12
 
-The first automated application/domain test suite is implemented and verified in CI. It covers the deterministic 1–5 evaluation rating rule and parent-facing privacy allowlist invariants, including exclusion of trainer-only fields and requiring ProgressEvent.parentVisible = true. CI now runs `npm test` between typecheck and build.
+The first automated application/domain test suite is implemented, verified in CI, and deployed to production in PR #45. It covers the deterministic 1–5 evaluation rating rule and parent-facing privacy allowlist invariants, including exclusion of trainer-only fields and requiring ProgressEvent.parentVisible = true. CI now runs `npm test` between typecheck and build.
 
 ## Next action
 
-PR #45 has passed lint, typecheck, automated tests, and production build with the new application/domain test step enabled. The testing-foundation roadmap item is now verified and checked off.
+PR #45 is merged and successfully deployed to Cloud Run. The next eligible incomplete Phase 2 item is **Player create/edit/archive**.
 
-Next:
-1. rerun CI after this documentation update;
-2. if CI remains green and PR #45 is mergeable, request Shandon's explicit approval to merge;
-3. merging to `main` will trigger the production Cloud Run deployment;
-4. after deployment verification, continue from the first eligible incomplete MVP roadmap item.
+Current status:
+- player creation is already hands-on verified;
+- edit and archive behavior are implemented in production;
+- the roadmap item remains unchecked until Shandon completes hands-on verification.
+
+Hands-on acceptance:
+1. create or use an obvious test athlete;
+2. edit multiple profile fields and save;
+3. leave the athlete page and reopen it to confirm the edits persisted;
+4. archive the test athlete using **Archive athlete** rather than permanent delete;
+5. confirm the archived athlete disappears from the active Players list while its historical data remains preserved in the database.
+
+If all five checks pass, mark **Player create/edit/archive** complete and continue to the next eligible incomplete MVP item. If any check fails, fix that path before advancing.
 
 ## Product behavior and invariants
 
