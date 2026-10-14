@@ -75,3 +75,14 @@ test("parent APIs never select trainer-private fields", () => {
   assert.equal("nextTime" in progressSelect, false);
   assert.deepEqual(parentPlayerSelect.progressEvents.where, { parentVisible: true });
 });
+
+
+test("player edit and archive preserve required identity and history semantics", async () => {
+  const detail = await readSource("src/app/api/trainer/players/[id]/route.ts");
+  const list = await readSource("src/app/api/trainer/players/route.ts");
+
+  assert.match(detail, /First name is required\./);
+  assert.match(detail, /Last name is required\./);
+  assert.match(detail, /data: \{ archivedAt: new Date\(\) \}/);
+  assert.match(list, /archivedAt: null/);
+});
