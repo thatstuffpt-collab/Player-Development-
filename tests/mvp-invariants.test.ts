@@ -75,3 +75,20 @@ test("parent APIs never select trainer-private fields", () => {
   assert.equal("nextTime" in progressSelect, false);
   assert.deepEqual(parentPlayerSelect.progressEvents.where, { parentVisible: true });
 });
+
+
+test("guardian management is trainer-authorized, player-scoped, and never reuses trainer identities", async () => {
+  const source = await readSource("src/app/api/trainer/players/[id]/guardians/route.ts");
+
+  assert.match(source, /requireAppUser\(request, \["TRAINER", "ADMIN"\]\)/);
+  assert.match(source, /requireTenantPlayer\(user, playerId\)/);
+  assert.match(source, /guardian\.role !== "GUARDIAN"/);
+  assert.match(source, /guardianId_playerId/);
+});
+
+test("baseline guardian connection preserves shared rating validation", async () => {
+  const source = await readSource("src/app/api/trainer/players/[id]/baseline/route.ts");
+
+  assert.match(source, /parseEvaluationRating\(item\.rating\)/);
+  assert.match(source, /existingGuardian && existingGuardian\.role !== "GUARDIAN"/);
+});
