@@ -7,6 +7,7 @@ import { authenticatedFetch } from "@/lib/authenticated-fetch";
 
 type AthleticTest = { id:string; category:string; testKey:string; testName:string; value:number; unit:string; lowerIsBetter:boolean; notes:string|null; testedAt:string };
 type ProgressEvent = { id:string; type:string; category:string; title:string; result:string; spot:string|null; occurredAt:string };
+type GuardianConnection = { relationshipId:string; guardianId:string; email:string; displayName:string|null; status:"ACTIVE"|"INVITED"; createdAt:string };
 type PlayerDetail = {
   id:string; firstName:string; lastName:string; preferredName:string|null; birthDate:string|null; classYear:number|null; height:string|null; position:string|null; schoolTeam:string|null; yearsPlaying:number|null; playingExperience:string|null; selfReportedNeeds:string|null; trainingLimitations:string|null;
   goals:Array<{id:string;title:string;type:string;status:string;completedAt?:string|null}>;
@@ -60,16 +61,25 @@ export default function PlayerProfilePage() {
   const [customCategory,setCustomCategory]=useState("Speed");
   const [customUnit,setCustomUnit]=useState("sec");
   const [testNotes,setTestNotes]=useState("");
+  const [guardians,setGuardians]=useState<GuardianConnection[]>([]);
+  const [guardianName,setGuardianName]=useState("");
+  const [guardianEmail,setGuardianEmail]=useState("");
+  const [guardianBusy,setGuardianBusy]=useState(false);
+  const [guardianMessage,setGuardianMessage]=useState("");
 
   async function fetchPlayer(){const r=await authenticatedFetch(`/api/trainer/players/${params.id}`);const p=await r.json();if(!r.ok)throw new Error(p.error??"Could not load player.");return p.player as PlayerDetail;}
+  async function fetchGuardians(){const r=await authenticatedFetch(`/api/trainer/players/${params.id}/guardians`);const p=await r.json();if(!r.ok)throw new Error(p.error??"Could not load parent/guardian connections.");return (p.guardians??[]) as GuardianConnection[];}
   async function refresh(){setPlayer(await fetchPlayer());}
-  useEffect(()=>{let cancelled=false;fetchPlayer().then(p=>!cancelled&&setPlayer(p)).catch(e=>!cancelled&&setError(e instanceof Error?e.message:"Could not load player."));return()=>{cancelled=true}},[params.id]);
+  async function refreshGuardians(){setGuardians(await fetchGuardians());}
+  useEffect(()=>{let cancelled=false;Promise.all([fetchPlayer(),fetchGuardians()]).then(([p,g])=>{if(!cancelled){setPlayer(p);setGuardians(g)}}).catch(e=>!cancelled&&setError(e instanceof Error?e.message:"Could not load player."));return()=>{cancelled=true}},[params.id]);
 
   async function saveProfile(e:FormEvent<HTMLFormElement>){e.preventDefault();setSaving(true);setError("");try{const r=await authenticatedFetch(`/api/trainer/players/${params.id}`,{method:"PATCH",body:JSON.stringify(Object.fromEntries(new FormData(e.currentTarget).entries()))});const p=await r.json();if(!r.ok)throw new Error(p.error??"Could not save player.");await refresh();setEditing(false)}catch(e){setError(e instanceof Error?e.message:"Could not save player.")}finally{setSaving(false)}}
   async function action(body:Record<string,unknown>){const r=await authenticatedFetch(`/api/trainer/players/${params.id}`,{method:"PATCH",body:JSON.stringify(body)});const p=await r.json();if(!r.ok)throw new Error(p.error??"Could not save change.");await refresh()}
   async function addGoal(){if(!newGoal.trim())return;try{await action({action:"addGoal",title:newGoal,type:"DEVELOPMENT"});setNewGoal("")}catch(e){setError(e instanceof Error?e.message:"Could not add goal.")}}
   async function addTag(){if(!newTag.trim())return;try{await action({action:"addTag",label:newTag});setNewTag("")}catch(e){setError(e instanceof Error?e.message:"Could not add tag.")}}
   async function addNote(){if(!newNote.trim())return;try{await action({action:"addNote",body:newNote});setNewNote("")}catch(e){setError(e instanceof Error?e.message:"Could not add note.")}}
+  async function addGuardian(e:FormEvent<HTMLFormElement>){e.preventDefault();if(!guardianEmail.trim())return;setGuardianBusy(true);setError("");setGuardianMessage("");try{const r=await authenticatedFetch(`/api/trainer/players/${params.id}/guardians`,{method:"POST",body:JSON.stringify({email:guardianEmail,displayName:guardianName})});const p=await r.json();if(!r.ok)throw new Error(p.error??"Could not connect parent/guardian.");setGuardianEmail("");setGuardianName("");setGuardianMessage(`${p.guardian.email} is connected. ${p.guardian.status==="ACTIVE"?"Their parent account is active.":"They can create a parent account from the login page using this email."}`);await refreshGuardians()}catch(e){setError(e instanceof Error?e.message:"Could not connect parent/guardian.")}finally{setGuardianBusy(false)}}
+  async function removeGuardian(guardianId:string,email:string){if(!confirm(`Remove ${email} from this athlete? They will no longer be able to view this athlete.`))return;setGuardianBusy(true);setError("");setGuardianMessage("");try{const r=await authenticatedFetch(`/api/trainer/players/${params.id}/guardians`,{method:"DELETE",body:JSON.stringify({guardianId})});const p=await r.json();if(!r.ok)throw new Error(p.error??"Could not remove parent/guardian.");await refreshGuardians()}catch(e){setError(e instanceof Error?e.message:"Could not remove parent/guardian.")}finally{setGuardianBusy(false)}}
   async function archivePlayer(){if(!confirm("Archive this player? Their history will stay in the database."))return;const r=await authenticatedFetch(`/api/trainer/players/${params.id}`,{method:"DELETE"});if(r.ok)router.replace("/trainer/players")}
   async function deletePlayer(){if(!confirm("Permanently delete this player and ALL sessions, evaluations, goals, notes, results and testing history? This cannot be undone."))return;if(!confirm("Final confirmation: permanently delete this player?"))return;const r=await authenticatedFetch(`/api/trainer/players/${params.id}?permanent=true`,{method:"DELETE"});const p=await r.json();if(!r.ok){setError(p.error??"Could not delete player.");return}router.replace("/trainer/players")}
   async function saveAthleticTest(e:FormEvent){e.preventDefault();setSaving(true);setError("");try{const r=await authenticatedFetch(`/api/trainer/players/${params.id}/athletic-tests`,{method:"POST",body:JSON.stringify({testKey,testName:testKey==="custom"?customName:undefined,category:customCategory,unit:customUnit,value:testValue,notes:testNotes,lowerIsBetter:testKey==="custom"&&["sec","time"].includes(customUnit.toLowerCase())})});const p=await r.json();if(!r.ok)throw new Error(p.error??"Could not save test.");setTestValue("");setTestNotes("");await refresh()}catch(e){setError(e instanceof Error?e.message:"Could not save test.")}finally{setSaving(false)}}
@@ -110,6 +120,16 @@ export default function PlayerProfilePage() {
       <section className="profile-content-grid"><article className="session-card"><div className="section-heading"><div><span className="section-kicker">NEXT ACTION</span><h2>Ready to coach</h2></div></div><p className="support-copy">Open the live session workspace with the athlete&apos;s current focus and recent evidence already in context.</p><Link className="primary-link-button" href={`/trainer/players/${player.id}/session`}>Start Session</Link></article>
       <article className="session-card"><div className="section-heading"><div><span className="section-kicker">DEVELOPMENT PLAN</span><h2>Current priorities</h2></div></div>{latestEvaluation?<><p><strong>{latestEvaluation.priorityAreas.join(" · ")||"No priorities saved"}</strong></p><p className="support-copy">{latestEvaluation.shortTermGoal||"No short-term goal saved."}</p></>:<p className="support-copy">Complete the first evaluation to establish development priorities.</p>}<button className="ghost-button" onClick={()=>setTab("plan")}>Open Plan</button></article></section>
       <section className="session-card"><div className="section-heading"><div><span className="section-kicker">COACH REMINDERS</span><h2>Keep in mind today</h2></div></div><div className="coach-tags">{player.coachTags.length?player.coachTags.map(t=><span className="coach-tag" key={t.id}>{t.label}</span>):<span className="support-copy">No coach reminders saved.</span>}</div></section>
+      <section className="session-card guardian-access-card"><div className="section-heading"><div><span className="section-kicker">PARENT / GUARDIAN ACCESS</span><h2>Connected family accounts</h2></div><span className="speed-chip">{guardians.length} connected</span></div>
+        <p className="support-copy">Connect a parent or guardian by email. Their dashboard only shows the athlete information approved for parent access.</p>
+        <form className="guardian-connect-form" onSubmit={addGuardian}>
+          <label>Parent/guardian name<input value={guardianName} onChange={e=>setGuardianName(e.target.value)} placeholder="Optional name"/></label>
+          <label>Email<input type="email" value={guardianEmail} onChange={e=>setGuardianEmail(e.target.value)} placeholder="parent@example.com" required/></label>
+          <button className="primary-button" disabled={guardianBusy}>{guardianBusy?"Connecting…":"Connect Parent / Guardian"}</button>
+        </form>
+        {guardianMessage&&<p className="guardian-success">{guardianMessage}</p>}
+        <div className="guardian-list">{guardians.map(g=><div className="guardian-row" key={g.relationshipId}><div><strong>{g.displayName||g.email}</strong><span>{g.email}</span></div><div className="guardian-row-actions"><span className="speed-chip">{g.status==="ACTIVE"?"Active":"Invited"}</span><button className="danger-text-button guardian-remove" type="button" disabled={guardianBusy} onClick={()=>removeGuardian(g.guardianId,g.email)}>Remove</button></div></div>)}{!guardians.length&&<div className="empty-state">No parent or guardian is connected to this athlete yet.</div>}</div>
+      </section>
     </div>}
 
     {tab==="plan"&&<div className="workspace-stack">
