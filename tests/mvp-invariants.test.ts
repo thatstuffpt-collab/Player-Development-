@@ -92,3 +92,14 @@ test("baseline guardian connection preserves shared rating validation", async ()
   assert.match(source, /parseEvaluationRating\(item\.rating\)/);
   assert.match(source, /existingGuardian && existingGuardian\.role !== "GUARDIAN"/);
 });
+
+
+test("player edit and archive preserve required identity and history semantics", async () => {
+  const detail = await readSource("src/app/api/trainer/players/[id]/route.ts");
+  const list = await readSource("src/app/api/trainer/players/route.ts");
+
+  assert.match(detail, /First name is required\./);
+  assert.match(detail, /Last name is required\./);
+  assert.match(detail, /data: \{ archivedAt: new Date\(\) \}/);
+  assert.match(list, /archivedAt: null/);
+});

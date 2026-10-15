@@ -54,6 +54,15 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
     const body = await request.json();
     const prisma = getPrisma();
 
+    if (body.action === undefined) {
+      if (body.firstName !== undefined && !String(body.firstName).trim()) {
+        return NextResponse.json({ error: "First name is required." }, { status: 400 });
+      }
+      if (body.lastName !== undefined && !String(body.lastName).trim()) {
+        return NextResponse.json({ error: "Last name is required." }, { status: 400 });
+      }
+    }
+
     if (body.action === "addGoal") {
       const title = String(body.title ?? "").trim();
       if (!title) return NextResponse.json({ error: "Goal title is required." }, { status: 400 });
