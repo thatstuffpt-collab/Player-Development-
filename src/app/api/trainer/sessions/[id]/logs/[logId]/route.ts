@@ -69,6 +69,7 @@ export async function PATCH(
         spot: body.spot === undefined ? undefined : asText(body.spot),
         notes,
         nextStep: body.next === undefined ? undefined : nextMap[String(body.next)] ?? null,
+        parentVisible: body.parentVisible === undefined ? undefined : body.parentVisible === true,
       },
     });
 
