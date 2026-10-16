@@ -19,6 +19,7 @@ type QuickLog = {
   spot: string | null;
   notes: string | null;
   nextStep: string | null;
+  parentVisible: boolean;
 };
 type SessionRecord = {
   id: string;
@@ -52,7 +53,7 @@ type WorkspacePlayer = {
 
 const shootingSpots = [
   "Right Corner", "Right Wing", "Top", "Left Wing", "Left Corner",
-  "Right Short Corner", "Left Short Corner", "Right Elbow", "Left Elbow", "Paint / Rim", "Custom",
+  "Right Short Corner", "Left Short Corner", "Right Elbow", "Left Elbow", "Free Throw Line (15 ft)", "Paint / Rim", "Custom",
 ];
 
 const athleticPlan: PlanSection[] = [
@@ -172,6 +173,9 @@ export default function RealPlayerSessionPage() {
   const [attempts, setAttempts] = useState("");
   const [listening, setListening] = useState(false);
   const [spot, setSpot] = useState("");
+  const [customSpot, setCustomSpot] = useState("");
+  const [shareWithParent, setShareWithParent] = useState(false);
+  const [saveMessage, setSaveMessage] = useState("");
   const [result, setResult] = useState("");
   const [note, setNote] = useState("");
   const [next, setNext] = useState("Keep progressing");
@@ -267,6 +271,7 @@ export default function RealPlayerSessionPage() {
   async function saveOrStartSession(startNow: boolean) {
     setBusy(true);
     setError("");
+    setSaveMessage("");
     try {
       const currentFocus = player?.developmentFocuses[0]?.focus ?? "Player development";
       const existingPlanned = session && !session.startedAt && !session.completedAt;
@@ -291,8 +296,19 @@ export default function RealPlayerSessionPage() {
       if (!response.ok) throw new Error(payload.error ?? (startNow ? "Could not start session." : "Could not save planned workout."));
 
       const savedSession = { ...payload.session, progressEvents: payload.session.progressEvents ?? [] } as SessionRecord;
-      setSession(savedSession);
-      setScheduledFor(localDateTimeValue(savedSession.scheduledFor));
+
+      if (!startNow) {
+        const confirmed = await fetchWorkspace(params.id);
+        if (!confirmed.openSession || confirmed.openSession.id !== savedSession.id) {
+          throw new Error("The workout was written, but it could not be confirmed as the athlete's saved planned workout. Please try saving again before leaving this page.");
+        }
+        setSession(confirmed.openSession);
+        setScheduledFor(localDateTimeValue(confirmed.openSession.scheduledFor));
+        setSaveMessage("Planned workout saved and confirmed.");
+      } else {
+        setSession(savedSession);
+        setScheduledFor(localDateTimeValue(savedSession.scheduledFor));
+      }
 
       if (startNow) {
         const firstSection = savedSession.practicePlan.find((item) => item.itemType === "SECTION");
@@ -348,6 +364,10 @@ export default function RealPlayerSessionPage() {
       const drillTitle = selectedDrillId === "other" ? customDrill.trim() : selectedSavedDrill?.title ?? "Session note";
       const logTitle = logType === "Goal progress" ? (selectedGoal || "Session goal") : drillTitle;
       const logResult = logType === "Shooting result" && makes && attempts ? `${makes}/${attempts}` : result;
+      const savedSpot = logType === "Shooting result" ? (spot === "Custom" ? customSpot.trim() : spot) : "";
+      if (logType === "Shooting result" && spot === "Custom" && !savedSpot) {
+        throw new Error("Describe the custom shooting location before saving.");
+      }
       const response = await authenticatedFetch(`/api/trainer/sessions/${session.id}/logs`, {
         method: "POST",
         body: JSON.stringify({
@@ -355,16 +375,17 @@ export default function RealPlayerSessionPage() {
           type: logType,
           category: selectedSavedSection?.title ?? "Session",
           title: logTitle,
-          spot: logType === "Shooting result" ? spot : "",
+          spot: savedSpot,
           result: logResult,
           notes: note,
           next,
+          parentVisible: shareWithParent,
         }),
       });
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.error ?? "Could not save Quick Log.");
       setSession((current) => current ? { ...current, progressEvents: [...current.progressEvents, payload.event] } : current);
-      setResult(""); setNote(""); setSpot(""); setCustomDrill(""); setMakes(""); setAttempts("");
+      setResult(""); setNote(""); setSpot(""); setCustomSpot(""); setCustomDrill(""); setMakes(""); setAttempts(""); setShareWithParent(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not save Quick Log.");
     } finally {
@@ -389,6 +410,7 @@ export default function RealPlayerSessionPage() {
           result: String(data.get("result") ?? ""),
           notes: String(data.get("notes") ?? ""),
           next: String(data.get("next") ?? "Keep progressing"),
+          parentVisible: data.get("parentVisible") === "on",
         }),
       });
       const payload = await response.json();
@@ -471,6 +493,7 @@ export default function RealPlayerSessionPage() {
               <p>This workout is saved. You can keep editing it now, leave the app, and come back when it is time to train.</p>
             </section>
           )}
+          {saveMessage && <p className={styles.successMessage}>{saveMessage}</p>}
 
           <section className={styles.panel}>
             <h2>Body check</h2>
@@ -549,13 +572,14 @@ export default function RealPlayerSessionPage() {
               <label>Drill<select value={selectedDrillId || savedDrills[0]?.id || "other"} onChange={(e) => { setSelectedDrillId(e.target.value); setSpot(""); }}>{savedDrills.map((item) => <option value={item.id} key={item.id}>{item.title}</option>)}<option value="other">Other / add drill</option></select></label>
               {selectedDrillId === "other" && <label>Library or custom drill<input list="quick-log-drill-library" value={customDrill} onChange={(e) => setCustomDrill(e.target.value)} placeholder="Search Library or type a new drill" /><datalist id="quick-log-drill-library">{drillLibrary.map((drill) => <option key={drill.name} value={drill.name} />)}</datalist></label>}
               <label>Log type<select value={logType} onChange={(e) => setLogType(e.target.value)}><option>Drill result</option><option>Shooting result</option><option>Dribbling result</option><option>Coach observation</option><option>Goal progress</option><option>Body/readiness update</option></select></label>
-              {logType === "Shooting result" && <><label>Court spot<select value={spot} onChange={(e) => setSpot(e.target.value)}><option value="">Choose spot</option>{shootingSpots.map((item) => <option key={item}>{item}</option>)}</select></label><label>Makes<input inputMode="numeric" value={makes} onChange={(e) => setMakes(e.target.value)} placeholder="7" /></label><label>Attempts<input inputMode="numeric" value={attempts} onChange={(e) => setAttempts(e.target.value)} placeholder="10" /></label></>}
+              {logType === "Shooting result" && <><label>Court spot<select value={spot} onChange={(e) => { setSpot(e.target.value); if (e.target.value !== "Custom") setCustomSpot(""); }}><option value="">Choose spot</option>{shootingSpots.map((item) => <option key={item}>{item}</option>)}</select></label>{spot === "Custom" && <label>Custom location<input value={customSpot} onChange={(e) => setCustomSpot(e.target.value)} placeholder="Example: left slot, 17 ft" required /></label>}<label>Makes<input inputMode="numeric" value={makes} onChange={(e) => setMakes(e.target.value)} placeholder="7" /></label><label>Attempts<input inputMode="numeric" value={attempts} onChange={(e) => setAttempts(e.target.value)} placeholder="10" /></label></>}
               {logType === "Dribbling result" && <label>Dribbling result<input value={result} onChange={(e) => setResult(e.target.value)} placeholder="18.4 sec, 12 clean reps, 2 mistakes" /></label>}
               {logType === "Drill result" && <label>Drill result<input value={result} onChange={(e) => setResult(e.target.value)} placeholder="Score, reps, time, or outcome" /></label>}
               {logType === "Goal progress" && <><label>Goal<select value={selectedGoal} onChange={(e) => setSelectedGoal(e.target.value)}><option value="">Choose session/player goal</option>{player.goals.map((goal) => <option value={goal.title} key={goal.id}>{goal.title}</option>)}</select></label><label>Goal status<select value={result} onChange={(e) => setResult(e.target.value)}><option value="">Choose status</option><option>Reached today</option><option>Progressing</option><option>Needs more work</option><option>Not worked today</option></select></label></>}
               {logType === "Body/readiness update" && <label>Readiness update<input value={result} onChange={(e) => setResult(e.target.value)} placeholder="Feeling good, knee 2/10, fatigue increased..." /></label>}
               {logType !== "Coach observation" && <label>What does it mean next?<select value={next} onChange={(e) => setNext(e.target.value)}><option>Keep progressing</option><option>Revisit next session</option><option>Goal met</option><option>Change focus</option></select></label>}
               <label className={styles.full}>{logType === "Coach observation" ? "Coach observation" : "Coach note"}<textarea value={note} onChange={(e) => setNote(e.target.value)} rows={3} placeholder={logType === "Coach observation" ? "What did you notice?" : "Optional context"} /></label>
+              <label className={styles.full}><input type="checkbox" checked={shareWithParent} onChange={(e) => setShareWithParent(e.target.checked)} /> Share this result with parent/guardian</label>
               <div className={styles.actions}><button type="button" onClick={startVoiceToText} disabled={listening}>{listening ? "🎙 Listening…" : "🎙 Voice-to-text"}</button><button className={styles.primary} disabled={busy}>Save Quick Log</button></div>
             </form>
           </section>
@@ -571,10 +595,11 @@ export default function RealPlayerSessionPage() {
                   <label>Result<input name="result" defaultValue={log.result} /></label>
                   <label>Next<select name="next" defaultValue={nextLabel(log.nextStep)}><option>Keep progressing</option><option>Revisit next session</option><option>Goal met</option><option>Change focus</option></select></label>
                   <label className={styles.full}>Coach note<textarea name="notes" defaultValue={log.notes ?? ""} rows={2} /></label>
+                  <label className={styles.full}><input name="parentVisible" type="checkbox" defaultChecked={log.parentVisible} /> Share this result with parent/guardian</label>
                   <div className={styles.actions}><button type="button" onClick={() => setEditingLog(null)}>Cancel</button><button className={styles.primary}>Save changes</button></div>
                 </form>
               ) : (
-                <article key={log.id}><span>{log.category} · {logTypeLabel(log.type)}</span><strong>{log.title}{log.spot ? ` · ${log.spot}` : ""}</strong><b>{log.result}</b>{log.notes && <p>{log.notes}</p>}<small>{nextLabel(log.nextStep)}</small><button onClick={() => setEditingLog(log)}>Edit Quick Log</button></article>
+                <article key={log.id}><span>{log.category} · {logTypeLabel(log.type)}</span><strong>{log.title}{log.spot ? ` · ${log.spot}` : ""}</strong><b>{log.result}</b>{log.notes && <p>{log.notes}</p>}<small>{nextLabel(log.nextStep)}{log.parentVisible ? " · Shared with parent" : ""}</small><button onClick={() => setEditingLog(log)}>Edit Quick Log</button></article>
               ))}
             </div>
             <button className={styles.primaryWide} onClick={openWrapUp}>Finish session & review wrap-up</button>
