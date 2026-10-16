@@ -131,3 +131,15 @@ test("planned workout save is re-read from the server before confirmation", asyn
   assert.match(sessionPage, /const confirmed = await fetchWorkspace\(params\.id\)/);
   assert.match(sessionPage, /Planned workout saved and confirmed\./);
 });
+
+
+test("trainer athlete results can explicitly toggle parent visibility", async () => {
+  const detail = await readSource("src/app/api/trainer/players/[id]/route.ts");
+  const page = await readSource("src/app/trainer/players/[id]/page.tsx");
+
+  assert.match(detail, /body\.action === "setProgressVisibility"/);
+  assert.match(detail, /parentVisible: body\.parentVisible === true/);
+  assert.match(page, /Trainer-shared results/);
+  assert.match(page, /Share with parent/);
+  assert.match(page, /Stop sharing/);
+});
