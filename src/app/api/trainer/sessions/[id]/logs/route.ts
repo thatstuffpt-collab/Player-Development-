@@ -69,7 +69,7 @@ export async function POST(
         spot: asText(body.spot),
         notes,
         nextStep: nextMap[String(body.next ?? "")] ?? null,
-        parentVisible: false,
+        parentVisible: body.parentVisible === true,
       },
     });
 
