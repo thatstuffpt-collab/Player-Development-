@@ -61,7 +61,7 @@ export default function ParentAthletePage() {
   }
 
   const currentFocus = player.developmentFocuses.find((focus) => !focus.completedAt);
-  const latestEvaluation = player.evaluations[0];
+  const latestEvaluation = player.evaluations.at(-1) ?? null;
 
   return (
     <main className="parent-shell">
@@ -88,8 +88,9 @@ export default function ParentAthletePage() {
 
       <section className="parent-section">
         <div><p className="parent-eyebrow">EVALUATIONS</p><h2>Development progress</h2></div>
-        {player.evaluations.map((evaluation) => (
+        {player.evaluations.map((evaluation, index) => (
           <article className="parent-card parent-evaluation" key={evaluation.id}>
+            <p className="parent-eyebrow">{player.evaluations.length === 1 ? "CURRENT CHECKPOINT" : index === 0 ? "STARTING POINT" : "CURRENT CHECKPOINT"}</p>
             <div className="parent-eval-heading"><div><strong>{evaluation.template.name}</strong><span>{new Date(evaluation.evaluatedAt).toLocaleDateString()}</span></div><span className="parent-chip">Version {evaluation.template.version}</span></div>
             {evaluation.priorityAreas.length > 0 && <p><strong>Priorities:</strong> {evaluation.priorityAreas.join(" · ")}</p>}
             {evaluation.shortTermGoal && <p><strong>Short-term goal:</strong> {evaluation.shortTermGoal}</p>}
