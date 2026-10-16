@@ -103,3 +103,43 @@ test("player edit and archive preserve required identity and history semantics",
   assert.match(detail, /data: \{ archivedAt: new Date\(\) \}/);
   assert.match(list, /archivedAt: null/);
 });
+
+
+test("Quick Logs support explicit parent sharing and custom shooting locations", async () => {
+  const sessionPage = await readSource("src/app/trainer/players/[id]/session/page.tsx");
+  const createLog = await readSource("src/app/api/trainer/sessions/[id]/logs/route.ts");
+  const editLog = await readSource("src/app/api/trainer/sessions/[id]/logs/[logId]/route.ts");
+
+  assert.match(sessionPage, /Free Throw Line \(15 ft\)/);
+  assert.match(sessionPage, /Custom location/);
+  assert.match(sessionPage, /Share this result with parent\/guardian/);
+  assert.match(createLog, /parentVisible: body\.parentVisible === true/);
+  assert.match(editLog, /parentVisible: body\.parentVisible === undefined \? undefined : body\.parentVisible === true/);
+});
+
+test("parent athlete API returns only starting and current evaluation checkpoints", async () => {
+  const parentRoute = await readSource("src/app/api/parent/players/[id]/route.ts");
+
+  assert.match(parentRoute, /const latest = evaluations\[0\]/);
+  assert.match(parentRoute, /const first = evaluations\.at\(-1\)/);
+  assert.match(parentRoute, /evaluations: parentEvaluations/);
+});
+
+test("planned workout save is re-read from the server before confirmation", async () => {
+  const sessionPage = await readSource("src/app/trainer/players/[id]/session/page.tsx");
+
+  assert.match(sessionPage, /const confirmed = await fetchWorkspace\(params\.id\)/);
+  assert.match(sessionPage, /Planned workout saved and confirmed\./);
+});
+
+
+test("trainer athlete results can explicitly toggle parent visibility", async () => {
+  const detail = await readSource("src/app/api/trainer/players/[id]/route.ts");
+  const page = await readSource("src/app/trainer/players/[id]/page.tsx");
+
+  assert.match(detail, /body\.action === "setProgressVisibility"/);
+  assert.match(detail, /parentVisible: body\.parentVisible === true/);
+  assert.match(page, /Trainer-shared results/);
+  assert.match(page, /Share with parent/);
+  assert.match(page, /Stop sharing/);
+});

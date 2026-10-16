@@ -33,7 +33,21 @@ export async function GET(
       return NextResponse.json({ error: "Athlete not found." }, { status: 404 });
     }
 
-    return NextResponse.json({ player: relationship.player });
+    const evaluations = relationship.player.evaluations;
+    const latest = evaluations[0] ?? null;
+    const first = evaluations.at(-1) ?? null;
+    const parentEvaluations = first && latest
+      ? first.id === latest.id
+        ? [latest]
+        : [first, latest]
+      : [];
+
+    return NextResponse.json({
+      player: {
+        ...relationship.player,
+        evaluations: parentEvaluations,
+      },
+    });
   } catch (error) {
     if (error instanceof AuthError) {
       return NextResponse.json({ error: error.message }, { status: error.status });

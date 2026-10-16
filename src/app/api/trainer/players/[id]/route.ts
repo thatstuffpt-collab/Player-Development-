@@ -63,6 +63,25 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
       }
     }
 
+    if (body.action === "setProgressVisibility") {
+      const eventId = String(body.eventId ?? "").trim();
+      if (!eventId) {
+        return NextResponse.json({ error: "Progress result is required." }, { status: 400 });
+      }
+      const progressEvent = await prisma.progressEvent.findFirst({
+        where: { id: eventId, playerId: id },
+        select: { id: true },
+      });
+      if (!progressEvent) {
+        return NextResponse.json({ error: "Progress result not found." }, { status: 404 });
+      }
+      const updated = await prisma.progressEvent.update({
+        where: { id: eventId },
+        data: { parentVisible: body.parentVisible === true },
+      });
+      return NextResponse.json({ progressEvent: updated });
+    }
+
     if (body.action === "addGoal") {
       const title = String(body.title ?? "").trim();
       if (!title) return NextResponse.json({ error: "Goal title is required." }, { status: 400 });
