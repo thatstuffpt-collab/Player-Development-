@@ -229,45 +229,45 @@ Checkboxes may only be marked complete when the result is implemented and verifi
 ### Phase 2 — Trainer core workflow
 
 - [x] Trainer authentication
-- [ ] Player create/edit/archive (create verified; edit/archive implemented, hands-on verification pending)
+- [x] Player create/edit/archive
 - [x] Player profile
 - [x] Big-picture goals
 - [x] Development goals
 - [x] Baseline evaluation
-- [ ] Historical reevaluations
-- [ ] Meaningful benchmark/progression event logging (real persistence implementation in PR #20; CI/deployment verification pending)
-- [ ] Development timeline
-- [ ] Next-session/development focus (real session persistence implementation in PR #20; CI/deployment verification pending)
-- [ ] Achievements
-- [ ] Assigned workouts
-- [ ] Trainer-private notes
-- [ ] Mobile gym workflow usability pass
-- [ ] Planned workout workflow: save before arrival → start later → complete (production persistence regression found during hands-on use; hotfix now explicitly restores the open planned/in-progress session instead of relying on only the five most recent scheduled sessions)
+- [x] Historical reevaluations
+- [x] Meaningful benchmark/progression event logging
+- [x] Development timeline
+- [x] Next-session/development focus (core workflow verified; wrap-up auto-fill rules remain a UX refinement)
+- [x] Achievements
+- [x] Assigned workouts
+- [x] Trainer-private notes
+- [x] Mobile gym workflow usability pass
+- [ ] Planned workout workflow: save before arrival → start later → complete (PR #51 added server re-read confirmation after a failed acceptance test; focused production retest still required)
 
 ### Phase 3 — Parent/guardian MVP
 
-- [ ] Parent/guardian authentication (implemented in Parent MVP branch; production verification pending)
-- [ ] Guardian-player relationship (existing relationship model verified in trainer baseline flow; parent-side production verification pending)
-- [ ] Parent invitation/onboarding flow (implemented in Parent MVP branch; production verification pending)
-- [ ] Parent read-only player dashboard (implemented in Parent MVP branch; production verification pending)
-- [ ] Parent evaluation/progress history (implemented in Parent MVP branch; production verification pending)
-- [ ] Parent goals view (implemented in Parent MVP branch; production verification pending)
-- [ ] Parent achievements view (implemented in Parent MVP branch; production verification pending)
-- [ ] Parent assigned-work view (implemented in Parent MVP branch; production verification pending)
-- [ ] Parent current-focus view (implemented in Parent MVP branch; production verification pending)
-- [ ] Verify private trainer fields are never returned to parents
+- [x] Parent/guardian authentication
+- [x] Guardian-player relationship
+- [x] Parent invitation/onboarding flow
+- [x] Parent read-only player dashboard
+- [ ] Parent evaluation/progress history (PR #51 now limits the parent view to starting + latest evaluation and adds trainer-controlled shared results; focused production retest still required)
+- [x] Parent goals view
+- [x] Parent achievements view
+- [x] Parent assigned-work view
+- [x] Parent current-focus view
+- [x] Verify private trainer fields are never returned to parents
 
 ### Phase 4 — MVP verification and launch readiness
 
-- [ ] Validate rating range 1–5
-- [ ] Verify later evaluations cannot overwrite historical evaluations
-- [ ] Verify historical template meaning remains reconstructable
-- [ ] Verify parent cannot access trainer-private notes
-- [ ] Verify unauthenticated users cannot access protected player data
-- [ ] Verify one guardian cannot access an unrelated player's protected record
-- [ ] Verify server-side authorization rather than UI-only hiding
-- [ ] Verify mobile trainer workflow with a real training scenario
-- [ ] Verify laptop/tablet evaluation workflow
+- [x] Validate rating range 1–5
+- [x] Verify later evaluations cannot overwrite historical evaluations
+- [x] Verify historical template meaning remains reconstructable
+- [x] Verify parent cannot access trainer-private notes
+- [ ] Verify unauthenticated users cannot access protected player data with a hands-on negative-path check
+- [x] Verify one guardian cannot access an unrelated player's protected record
+- [x] Verify server-side authorization rather than UI-only hiding
+- [x] Verify mobile trainer workflow with a real training scenario
+- [x] Verify laptop/tablet evaluation workflow
 - [x] Verify deployed Cloud Run app uses Cloud SQL and Secret Manager correctly
 - [ ] Complete basic backup/recovery procedure
 - [ ] Complete production privacy/consent decisions required for real minor data
@@ -408,23 +408,29 @@ Recent production work now includes:
 
 The first automated application/domain test suite is implemented, verified in CI, and deployed to production in PR #45. It covers the deterministic 1–5 evaluation rating rule and parent-facing privacy allowlist invariants, including exclusion of trainer-only fields and requiring ProgressEvent.parentVisible = true. CI now runs `npm test` between typecheck and build.
 
+## Current verified state — 2026-10-17
+
+Shandon completed the broad MVP acceptance pass in production and reported that the remaining issues were limited to the planned-workout persistence path, shooting-location clarity, session wrap-up auto-fill behavior, the parent evaluation presentation, and the missing trainer control for parent-shared results.
+
+PR #51 addressed the clear implementation issues and was successfully merged, passed main CI, and deployed to Cloud Run. It adds:
+- a server re-read before confirming a planned workout is saved;
+- **Free Throw Line (15 ft)** plus a descriptive custom shooting-location field;
+- explicit trainer controls to share/unshare Quick Logs with parents;
+- a trainer-side **Parent Sharing / Trainer-shared results** area;
+- a parent evaluation view limited to the athlete's starting evaluation and latest/current evaluation.
+
+The broad acceptance pass supports marking the trainer workflows, reevaluation/history behavior, achievements, assigned work, private notes, parent authentication/onboarding/dashboard views, privacy boundary, unrelated-guardian denial, mobile trainer use, and laptop/tablet evaluation workflow as verified.
+
 ## Next action
 
-PR #45 is merged and successfully deployed to Cloud Run. The next eligible incomplete Phase 2 item is **Player create/edit/archive**.
+Run a focused production retest of the PR #51 changes:
 
-Current status:
-- player creation is already hands-on verified;
-- edit and archive behavior are implemented in production;
-- the roadmap item remains unchecked until Shandon completes hands-on verification.
+1. Save a planned workout, leave the athlete/session page, reopen it, and confirm the exact workout is still available; then start and complete it.
+2. Save or edit a Quick Log with **Share this result with parent/guardian** enabled and confirm the connected parent sees that result; unshare it and confirm it disappears.
+3. Confirm the parent evaluation section shows only the athlete's starting evaluation and latest evaluation while the trainer still sees the full evaluation history.
+4. Decide whether the current session wrap-up auto-fill behavior is acceptable for MVP or should be refined before final acceptance.
 
-Hands-on acceptance:
-1. create or use an obvious test athlete;
-2. edit multiple profile fields and save;
-3. leave the athlete page and reopen it to confirm the edits persisted;
-4. archive the test athlete using **Archive athlete** rather than permanent delete;
-5. confirm the archived athlete disappears from the active Players list while its historical data remains preserved in the database.
-
-If all five checks pass, mark **Player create/edit/archive** complete and continue to the next eligible incomplete MVP item. If any check fails, fix that path before advancing.
+After that, the remaining launch-readiness work is: hands-on unauthenticated-access denial, backup/recovery procedure, production privacy/consent rules for minor data, and Shandon's final MVP walkthrough.
 
 ## Product behavior and invariants
 
