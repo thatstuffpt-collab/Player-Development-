@@ -266,3 +266,24 @@ Immediate continuation:
 
 Do not mark the roadmap item complete until Shandon finishes the hands-on production acceptance.
 
+
+
+## Current continuation — 2026-10-17 MVP acceptance status
+
+Shandon completed the broad production MVP acceptance pass. The trainer core workflow, player create/edit/archive, goals, baseline evaluation, historical reevaluation behavior, meaningful progress logging, development timeline, achievements, assigned work, trainer-private notes, mobile trainer workflow, parent authentication/onboarding/dashboard views, parent privacy boundary, unrelated-guardian denial, and laptop/tablet evaluation workflow were reported working.
+
+PR #51 was merged to `main`, passed CI, and deployed successfully to Cloud Run. It addressed the acceptance issues found during that pass:
+- planned-workout saves are re-read from the server before the UI confirms success;
+- shooting Quick Logs include Free Throw Line (15 ft) and a descriptive custom-location field;
+- Quick Logs can be explicitly shared/unshared with parents from the live session and athlete Results view;
+- parents receive only the athlete's starting evaluation and latest/current evaluation while trainers retain the full history.
+
+Remaining focused acceptance:
+1. retest planned workout save → leave → reopen → start → complete;
+2. retest share/unshare of a Quick Log against the parent account;
+3. retest parent starting/latest evaluation presentation while trainer history remains complete;
+4. approve or refine session wrap-up auto-fill behavior.
+
+Remaining launch-readiness work after those checks: unauthenticated negative-path verification, basic backup/recovery procedure, production privacy/consent decisions for real minor data, and Shandon's final acceptance walkthrough.
+
+Do not mark **MVP COMPLETE** until those remaining checks and launch-readiness items are closed.
