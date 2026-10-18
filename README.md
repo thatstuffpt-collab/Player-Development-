@@ -119,7 +119,7 @@ These are valuable, but they do not block MVP completion:
 - player logins;
 - native iOS/Android apps;
 - payments/billing;
-- PDFs or printable reports unless later promoted into MVP;
+- PDFs or printable reports other than the coach-facing group/camp practice-plan export;
 - public profile publishing;
 - complex analytics beyond basic progress/history views.
 
@@ -242,6 +242,7 @@ Checkboxes may only be marked complete when the result is implemented and verifi
 - [x] Assigned workouts
 - [x] Trainer-private notes
 - [x] Mobile gym workflow usability pass
+- [ ] Group/camp practice-plan builder using the Drill Library + printable/save-as-PDF coach copy (implementation in progress)
 - [ ] Planned workout workflow: save before arrival → start later → complete (PR #51 added server re-read confirmation after a failed acceptance test; focused production retest still required)
 
 ### Phase 3 — Parent/guardian MVP
@@ -423,7 +424,9 @@ The broad acceptance pass supports marking the trainer workflows, reevaluation/h
 
 ## Next action
 
-Run a focused production retest of the PR #51 changes:
+Shandon reprioritized a new trainer workflow before final MVP sign-off: a standalone **Group & Camp Practice Plan** builder that reuses the individual-session Drill Library without live-session logging and produces a printable / Save-as-PDF coach copy. Implement and verify that workflow, then return to the focused PR #51 retest.
+
+After the group/camp planning workflow is verified, run a focused production retest of the PR #51 changes:
 
 1. Save a planned workout, leave the athlete/session page, reopen it, and confirm the exact workout is still available; then start and complete it.
 2. Save or edit a Quick Log with **Share this result with parent/guardian** enabled and confirm the connected parent sees that result; unshare it and confirm it disappears.
