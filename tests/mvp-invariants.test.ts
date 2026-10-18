@@ -143,3 +143,27 @@ test("trainer athlete results can explicitly toggle parent visibility", async ()
   assert.match(page, /Share with parent/);
   assert.match(page, /Stop sharing/);
 });
+
+
+test("group and camp practice plans are tenant-scoped and coach-printable", async () => {
+  const collection = await readSource("src/app/api/trainer/practice-plans/route.ts");
+  const detail = await readSource("src/app/api/trainer/practice-plans/[id]/route.ts");
+  const page = await readSource("src/app/trainer/practice-plans/page.tsx");
+
+  assert.match(collection, /requireAppUser\(request, \["TRAINER", "ADMIN"\]\)/);
+  assert.match(collection, /tenantId: user\.tenantId/);
+  assert.match(detail, /where: \{ id, tenantId: user\.tenantId \}/);
+  assert.match(page, /Build from your drill library/);
+  assert.match(page, /Print \/ Save PDF/);
+  assert.match(page, /window\.print\(\)/);
+});
+
+
+test("Group/Camps is a first-class trainer navigation destination", async () => {
+  const layout = await readSource("src/app/trainer/layout.tsx");
+  const hub = await readSource("src/app/trainer/groups-camps/page.tsx");
+
+  assert.match(layout, /href="\/trainer\/groups-camps">Group\/Camps<\/Link>/);
+  assert.match(hub, /href="\/trainer\/practice-plans"/);
+  assert.match(hub, /href="\/trainer\/evaluate\/camp"/);
+});

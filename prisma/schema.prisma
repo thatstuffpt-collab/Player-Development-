@@ -65,6 +65,11 @@ enum PracticePlanItemType {
   DRILL
 }
 
+enum GroupPracticePlanType {
+  GROUP
+  CAMP
+}
+
 enum ProgressEventType {
   SHOOTING_RESULT
   DRIBBLING_RESULT
@@ -91,6 +96,7 @@ model Tenant {
   users       User[]
   players     Player[]
   memberships OrganizationMembership[]
+  groupPracticePlans GroupPracticePlan[]
 }
 
 model User {
@@ -398,4 +404,38 @@ model AthleticTest {
 
   @@index([playerId, testedAt])
   @@index([playerId, testKey])
+}
+
+
+model GroupPracticePlan {
+  id           String                 @id @default(cuid())
+  tenantId     String
+  title        String
+  planType     GroupPracticePlanType
+  scheduledFor DateTime?
+  notes        String?
+  createdAt    DateTime               @default(now())
+  updatedAt    DateTime               @updatedAt
+  tenant       Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  items        GroupPracticePlanItem[]
+
+  @@index([tenantId, planType, scheduledFor])
+  @@index([tenantId, updatedAt])
+}
+
+model GroupPracticePlanItem {
+  id           String               @id @default(cuid())
+  planId       String
+  parentItemId String?
+  itemType     PracticePlanItemType @default(DRILL)
+  focusArea    SessionFocusArea?
+  sortOrder    Int
+  title        String
+  notes        String?
+  plan         GroupPracticePlan    @relation(fields: [planId], references: [id], onDelete: Cascade)
+  parentItem   GroupPracticePlanItem?  @relation("GroupPracticePlanHierarchy", fields: [parentItemId], references: [id], onDelete: Cascade)
+  childItems   GroupPracticePlanItem[]  @relation("GroupPracticePlanHierarchy")
+
+  @@index([planId, sortOrder])
+  @@index([parentItemId])
 }

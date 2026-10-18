@@ -12,6 +12,7 @@ export default function TrainerLayout({ children }: { children: ReactNode }) {
         <div className="trainer-nav-links">
           <Link href="/trainer/today">Today</Link>
           <Link href="/trainer/players">Athletes</Link>
+          <Link href="/trainer/groups-camps">Group/Camps</Link>
           <Link href="/trainer/drills">Library</Link>
           <Link href="/trainer/organization">Organization</Link>
           <AccountSignOutButton className="trainer-signout-button" />
@@ -21,6 +22,7 @@ export default function TrainerLayout({ children }: { children: ReactNode }) {
       <nav className="trainer-mobile-nav" aria-label="Mobile trainer navigation">
         <Link href="/trainer/today"><span aria-hidden="true">⌂</span><strong>Today</strong></Link>
         <Link href="/trainer/players"><span aria-hidden="true">◉</span><strong>Athletes</strong></Link>
+        <Link href="/trainer/groups-camps"><span aria-hidden="true">▤</span><strong>Group/Camps</strong></Link>
         <Link href="/trainer/drills"><span aria-hidden="true">▦</span><strong>Library</strong></Link>
         <Link href="/trainer/organization"><span aria-hidden="true">◎</span><strong>Organization</strong></Link>
       </nav>
