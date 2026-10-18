@@ -157,3 +157,13 @@ test("group and camp practice plans are tenant-scoped and coach-printable", asyn
   assert.match(page, /Print \/ Save PDF/);
   assert.match(page, /window\.print\(\)/);
 });
+
+
+test("Group/Camps is a first-class trainer navigation destination", async () => {
+  const layout = await readSource("src/app/trainer/layout.tsx");
+  const hub = await readSource("src/app/trainer/groups-camps/page.tsx");
+
+  assert.match(layout, /href="\/trainer\/groups-camps">Group\/Camps<\/Link>/);
+  assert.match(hub, /href="\/trainer\/practice-plans"/);
+  assert.match(hub, /href="\/trainer\/evaluate\/camp"/);
+});
