@@ -287,3 +287,20 @@ Remaining focused acceptance:
 Remaining launch-readiness work after those checks: unauthenticated negative-path verification, basic backup/recovery procedure, production privacy/consent decisions for real minor data, and Shandon's final acceptance walkthrough.
 
 Do not mark **MVP COMPLETE** until those remaining checks and launch-readiness items are closed.
+
+
+## Current continuation — 2026-10-18 group/camp practice planning
+
+Shandon promoted a new coach workflow into the MVP before final sign-off: a standalone practice-plan builder for group sessions and camps.
+
+Product decision:
+- reuse the same Section -> Drill builder and Master Drill Library used when planning an individual session;
+- do not require a player, live-session state, Quick Log, readiness check, or wrap-up;
+- save reusable group/camp plans at the active organization/tenant level;
+- support both Group Session and Camp plan types;
+- include plan title, optional date/time, overall coach/staff notes, section notes, drill notes, and library/custom drills;
+- provide a coach-facing printable layout so the browser can print the plan or save it as a PDF for staff distribution.
+
+Implementation branch: `feat/group-camp-practice-plans`.
+
+Do not mark the roadmap item complete until CI/deployment and a production save -> reopen/edit -> Print/Save PDF acceptance check pass.
