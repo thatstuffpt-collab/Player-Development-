@@ -108,7 +108,17 @@ export default function GroupCampPracticePlansPage() {
   }
 
   useEffect(() => {
-    void refresh().catch((err) => setError(err instanceof Error ? err.message : "Could not load practice plans."));
+    let cancelled = false;
+    void authenticatedFetch("/api/trainer/practice-plans")
+      .then(async (response) => {
+        const payload = await response.json();
+        if (!response.ok) throw new Error(payload.error ?? "Could not load practice plans.");
+        if (!cancelled) setSavedPlans(payload.plans ?? []);
+      })
+      .catch((err) => {
+        if (!cancelled) setError(err instanceof Error ? err.message : "Could not load practice plans.");
+      });
+    return () => { cancelled = true; };
   }, []);
 
   const librarySection = plan.find((section) => section.id === librarySectionId) ?? null;
@@ -317,7 +327,7 @@ export default function GroupCampPracticePlansPage() {
             <button className="ghost-button" onClick={() => window.print()}>Print / Save PDF</button>
             {activeId && <button className="danger-text-button" onClick={deletePlan} disabled={busy}>Delete plan</button>}
           </div>
-          <p className="support-copy">For a PDF: choose <strong>Print / Save PDF</strong>, then select <strong>Save as PDF</strong> in your device's print dialog.</p>
+          <p className="support-copy">For a PDF: choose <strong>Print / Save PDF</strong>, then select <strong>Save as PDF</strong> in your device&apos;s print dialog.</p>
         </section>
       </div>
 
