@@ -113,7 +113,7 @@ These are valuable, but they do not block MVP completion:
 - social/recruiting links;
 - camp intake and mass camp evaluation;
 - advanced college/pro evaluation templates;
-- full drill library;
+- advanced drill-library analytics and media attachments;
 - automatic benchmark-to-rating decisions;
 - AI-generated player ratings or coaching decisions;
 - player logins;
@@ -242,7 +242,8 @@ Checkboxes may only be marked complete when the result is implemented and verifi
 - [x] Assigned workouts
 - [x] Trainer-private notes
 - [x] Mobile gym workflow usability pass
-- [ ] Group/camp practice-plan builder using the Drill Library + printable/save-as-PDF coach copy (implementation in progress)
+- [x] Group/camp practice-plan builder using the Drill Library + printable/save-as-PDF coach copy
+- [ ] Manageable Drill Library: organization-specific CSV upload, aliases/deduplication, and use across individual + group/camp planners (implementation in progress)
 - [ ] Planned workout workflow: save before arrival → start later → complete (PR #51 added server re-read confirmation after a failed acceptance test; focused production retest still required)
 
 ### Phase 3 — Parent/guardian MVP
@@ -464,3 +465,19 @@ A future public recruiting profile and a parent-authenticated profile must be tr
 ## Repository guidance
 
 Read `AGENTS.md` and `docs/HANDOFF.md` before substantive product or engineering changes.
+
+## Current continuation — 2026-10-19 manageable drill library
+
+Shandon verified the deployed Group/Camps workflow and identified the remaining usability problem: the current Drill Library is a starter list with duplicate or overlapping names and cannot be replaced from the app.
+
+Product decision:
+- the Library page becomes the trainer-facing management surface;
+- each organization can upload its own CSV drill list;
+- one official drill name should represent a drill, while alternate wording lives in Aliases and remains searchable;
+- CSV fields are Drill Name, Primary Category, Subcategory, Alternate Names / Aliases, Tags, Measurable?, Measurement Type, Variations, and Notes;
+- the trainer can preview an upload before saving;
+- Replace Library creates the cleaned organization library, while Add / Update merges rows by normalized official drill name;
+- the built-in starter library remains the fallback when no custom library exists and can be restored from the UI;
+- both individual-session planning and Group/Camp planning must use the active organization library rather than the hard-coded starter list.
+
+Do not mark the managed-library roadmap item complete until CI/deployment and production acceptance verify: download template -> upload cleaned CSV -> preview -> replace/add -> search by alias -> use uploaded drill in an individual plan and a Group/Camp plan.
