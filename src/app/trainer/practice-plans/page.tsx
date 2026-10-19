@@ -87,6 +87,7 @@ function dateInput(value: string | null) {
 
 export default function GroupCampPracticePlansPage() {
   const [savedPlans, setSavedPlans] = useState<SavedPlan[]>([]);
+  const [libraryDrills, setLibraryDrills] = useState<DrillDefinition[]>(drillLibrary);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [title, setTitle] = useState("Group Session Practice Plan");
   const [planType, setPlanType] = useState<"GROUP" | "CAMP">("GROUP");
@@ -109,6 +110,13 @@ export default function GroupCampPracticePlansPage() {
 
   useEffect(() => {
     let cancelled = false;
+    void authenticatedFetch("/api/trainer/drills")
+      .then(async (response) => {
+        const payload = await response.json();
+        if (!response.ok) throw new Error(payload.error ?? "Could not load drill library.");
+        if (!cancelled) setLibraryDrills(payload.drills ?? drillLibrary);
+      })
+      .catch(() => { if (!cancelled) setLibraryDrills(drillLibrary); });
     void authenticatedFetch("/api/trainer/practice-plans")
       .then(async (response) => {
         const payload = await response.json();
@@ -125,7 +133,7 @@ export default function GroupCampPracticePlansPage() {
   const filteredLibrary = useMemo(() => {
     const query = libraryQuery.trim().toLowerCase();
     const suggested = librarySection ? sectionSuggestedCategories(librarySection.title) : [];
-    return drillLibrary
+    return libraryDrills
       .filter((drill) => libraryCategory === "All" || drill.tags.includes(libraryCategory as never))
       .filter((drill) => !query || drill.name.toLowerCase().includes(query) || drill.tags.some((tag) => tag.toLowerCase().includes(query)))
       .sort((a, b) => {
@@ -134,7 +142,7 @@ export default function GroupCampPracticePlansPage() {
         return bSuggested - aSuggested || a.name.localeCompare(b.name);
       })
       .slice(0, 30);
-  }, [libraryCategory, libraryQuery, librarySection]);
+  }, [libraryCategory, libraryQuery, librarySection, libraryDrills]);
 
   function newPlan(type: "GROUP" | "CAMP" = "GROUP") {
     setActiveId(null);
