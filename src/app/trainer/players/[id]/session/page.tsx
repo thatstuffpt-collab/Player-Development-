@@ -244,7 +244,7 @@ export default function RealPlayerSessionPage() {
     const suggested = librarySection ? sectionSuggestedCategories(librarySection.title) : [];
     return libraryDrills
       .filter((drill) => libraryCategory === "All" || drill.tags.includes(libraryCategory as never))
-      .filter((drill) => !query || drill.name.toLowerCase().includes(query) || drill.tags.some((tag) => tag.toLowerCase().includes(query)))
+      .filter((drill) => !query || [drill.name, drill.subcategory ?? "", ...(drill.aliases ?? []), ...drill.tags, ...(drill.variations ?? []), drill.notes ?? ""].some((value) => value.toLowerCase().includes(query)))
       .sort((a, b) => {
         const aSuggested = a.tags.some((tag) => suggested.includes(tag)) ? 1 : 0;
         const bSuggested = b.tags.some((tag) => suggested.includes(tag)) ? 1 : 0;
