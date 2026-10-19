@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { AuthError, requireAppUser } from "@/domain/authorization/identity";
-import { drillLibrary as defaultDrillLibrary, drillCategories, type DrillDefinition } from "@/domain/drills/master-drill-library";
+import { drillLibrary as defaultDrillLibrary, drillCategories } from "@/domain/drills/master-drill-library";
 import { getPrisma } from "@/lib/db";
 
 export const runtime = "nodejs";
