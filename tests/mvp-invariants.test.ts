@@ -167,3 +167,22 @@ test("Group/Camps is a first-class trainer navigation destination", async () => 
   assert.match(hub, /href="\/trainer\/practice-plans"/);
   assert.match(hub, /href="\/trainer\/evaluate\/camp"/);
 });
+
+
+test("managed drill library is tenant-scoped and supports CSV replacement plus aliases", async () => {
+  const api = await readSource("src/app/api/trainer/drills/route.ts");
+  const page = await readSource("src/app/trainer/drills/page.tsx");
+  const individual = await readSource("src/app/trainer/players/[id]/session/page.tsx");
+  const groupCamp = await readSource("src/app/trainer/practice-plans/page.tsx");
+
+  assert.match(api, /requireAppUser\(request, \["TRAINER", "ADMIN"\]\)/);
+  assert.match(api, /tenantId: user\.tenantId/);
+  assert.match(api, /mode === "replace"/);
+  assert.match(api, /tenantId_normalizedName/);
+  assert.match(page, /Download CSV Template/);
+  assert.match(page, /Upload Drill List/);
+  assert.match(page, /Alternate Names \/ Aliases/);
+  assert.match(page, /Replace Library/);
+  assert.match(individual, /authenticatedFetch\("\/api\/trainer\/drills"\)/);
+  assert.match(groupCamp, /authenticatedFetch\("\/api\/trainer\/drills"\)/);
+});
