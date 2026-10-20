@@ -150,7 +150,7 @@ export async function POST(request: Request) {
 
     let rows: ImportedDrill[];
     try {
-      rows = rawRows.map((row, index) => parseRow(row ?? {}, index));
+      rows = rawRows.map((row: Record<string, unknown>, index: number) => parseRow(row ?? {}, index));
     } catch (error) {
       return NextResponse.json({ error: error instanceof Error ? error.message : "Invalid drill row." }, { status: 400 });
     }
