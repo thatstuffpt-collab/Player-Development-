@@ -1,5 +1,342 @@
 "use client";
-import {useMemo,useState} from "react";
+
 import Link from "next/link";
-import {drillCategories,drillLibrary} from "@/domain/drills/master-drill-library";
-export default function DrillLibraryPage(){const[q,setQ]=useState("");const[category,setCategory]=useState("All");const[measurable,setMeasurable]=useState(false);const items=useMemo(()=>drillLibrary.filter(d=>(category==="All"||d.tags.includes(category as never))&&(!measurable||d.measurable)&&(d.name.toLowerCase().includes(q.toLowerCase())||d.tags.some(t=>t.toLowerCase().includes(q.toLowerCase())))),[q,category,measurable]);return <main className="players-shell"><header className="players-header"><div><Link className="back-link" href="/trainer/players">← Trainer</Link><p className="eyebrow">MASTER DRILL LIBRARY</p><h1>Drills</h1><p className="support-copy">One permanent drill record with reusable tags, measurements and variations—no duplicate drills for every hand, spot or intensity.</p></div></header><section className="session-card"><div className="player-create-grid"><label>Search<input value={q} onChange={e=>setQ(e.target.value)} placeholder="Search drills..."/></label><label>Category<select value={category} onChange={e=>setCategory(e.target.value)}><option>All</option>{drillCategories.map(c=><option key={c}>{c}</option>)}</select></label><label><span>Filters</span><button type="button" className={measurable?"primary-button":"ghost-button"} onClick={()=>setMeasurable(v=>!v)}>Measurable only</button></label></div><p className="support-copy">Showing {items.length} of {drillLibrary.length} drills</p></section><section className="profile-content-grid">{items.map(d=><article className="session-card" key={d.name}><span className="section-kicker">{d.primaryCategory}</span><h2>{d.name}</h2><div className="coach-tags">{d.tags.map(t=><span className="coach-tag" key={t}>{t}</span>)}</div>{d.measurable&&<p className="support-copy">Measurement: {d.measurementType?.replaceAll("-"," / ")}</p>}{d.variations?.length?<p className="support-copy">Variations: {d.variations.join(" · ")}</p>:null}</article>)}</section></main>}
+import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
+import { drillCategories as defaultCategories, drillLibrary as fallbackLibrary, type DrillDefinition } from "@/domain/drills/master-drill-library";
+import { authenticatedFetch } from "@/lib/authenticated-fetch";
+
+type DrillRow = DrillDefinition & {
+  id?: string;
+  subcategory?: string | null;
+  aliases?: string[];
+  notes?: string | null;
+  isDefault?: boolean;
+};
+
+type PreviewRow = {
+  "Drill Name": string;
+  "Primary Category": string;
+  Subcategory: string;
+  "Alternate Names / Aliases": string;
+  Tags: string;
+  "Measurable?": string;
+  "Measurement Type": string;
+  Variations: string;
+  Notes: string;
+};
+
+const templateHeaders = [
+  "Drill Name",
+  "Primary Category",
+  "Subcategory",
+  "Alternate Names / Aliases",
+  "Tags",
+  "Measurable?",
+  "Measurement Type",
+  "Variations",
+  "Notes",
+] as const;
+
+function parseCsv(text: string): string[][] {
+  const rows: string[][] = [];
+  let row: string[] = [];
+  let field = "";
+  let quoted = false;
+
+  for (let i = 0; i < text.length; i += 1) {
+    const char = text[i];
+    const next = text[i + 1];
+
+    if (char === '"' && quoted && next === '"') {
+      field += '"';
+      i += 1;
+      continue;
+    }
+    if (char === '"') {
+      quoted = !quoted;
+      continue;
+    }
+    if (char === "," && !quoted) {
+      row.push(field.trim());
+      field = "";
+      continue;
+    }
+    if ((char === "\n" || char === "\r") && !quoted) {
+      if (char === "\r" && next === "\n") i += 1;
+      row.push(field.trim());
+      if (row.some(Boolean)) rows.push(row);
+      row = [];
+      field = "";
+      continue;
+    }
+    field += char;
+  }
+
+  row.push(field.trim());
+  if (row.some(Boolean)) rows.push(row);
+  return rows;
+}
+
+function escapeCsv(value: string) {
+  return /[",\n]/.test(value) ? `"${value.replaceAll('"', '""')}"` : value;
+}
+
+function normalize(value: string) {
+  return value
+    .normalize("NFKD")
+    .toLowerCase()
+    .replace(/[’']/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim()
+    .replace(/\s+/g, " ");
+}
+
+export default function DrillLibraryPage() {
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [q, setQ] = useState("");
+  const [category, setCategory] = useState("All");
+  const [measurable, setMeasurable] = useState(false);
+  const [items, setItems] = useState<DrillRow[]>(fallbackLibrary);
+  const [categories, setCategories] = useState<string[]>(defaultCategories);
+  const [source, setSource] = useState<"default" | "custom">("default");
+  const [preview, setPreview] = useState<PreviewRow[]>([]);
+  const [fileName, setFileName] = useState("");
+  const [mode, setMode] = useState<"replace" | "add">("replace");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
+
+  async function loadLibrary() {
+    const response = await authenticatedFetch("/api/trainer/drills");
+    const payload = await response.json();
+    if (!response.ok) throw new Error(payload.error ?? "Could not load drill library.");
+    setItems(payload.drills ?? []);
+    setCategories(payload.categories ?? defaultCategories);
+    setSource(payload.source ?? "default");
+  }
+
+  useEffect(() => {
+    let cancelled = false;
+    void authenticatedFetch("/api/trainer/drills")
+      .then(async (response) => {
+        const payload = await response.json();
+        if (!response.ok) throw new Error(payload.error ?? "Could not load drill library.");
+        if (cancelled) return;
+        setItems(payload.drills ?? []);
+        setCategories(payload.categories ?? defaultCategories);
+        setSource(payload.source ?? "default");
+      })
+      .catch((err) => { if (!cancelled) setError(err instanceof Error ? err.message : "Could not load drill library."); });
+    return () => { cancelled = true; };
+  }, []);
+
+  const filtered = useMemo(() => {
+    const query = q.trim().toLowerCase();
+    return items.filter((drill) => {
+      if (category !== "All" && !drill.tags.includes(category as never)) return false;
+      if (measurable && !drill.measurable) return false;
+      if (!query) return true;
+      return [
+        drill.name,
+        drill.primaryCategory,
+        drill.subcategory ?? "",
+        ...(drill.aliases ?? []),
+        ...(drill.tags ?? []),
+        ...(drill.variations ?? []),
+        drill.notes ?? "",
+      ].some((value) => value.toLowerCase().includes(query));
+    });
+  }, [category, items, measurable, q]);
+
+  const duplicatePreview = useMemo(() => {
+    const groups = new Map<string, string[]>();
+    for (const row of preview) {
+      const key = normalize(row["Drill Name"]);
+      if (!key) continue;
+      groups.set(key, [...(groups.get(key) ?? []), row["Drill Name"]]);
+    }
+    return [...groups.values()].filter((names) => names.length > 1);
+  }, [preview]);
+
+  function downloadTemplate() {
+    const example = [
+      "Cross-Step Punch",
+      "Ball Handling",
+      "Change of Direction",
+      "Cross Step Punch; Cross Punch",
+      "Ball Handling; Footwork",
+      "No",
+      "none",
+      "Right hand; Left hand",
+      "Use one official drill name. Put alternate wording in Aliases.",
+    ];
+    const csv = [templateHeaders.join(","), example.map(escapeCsv).join(",")].join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = "thats-tuff-drill-library-template.csv";
+    anchor.click();
+    URL.revokeObjectURL(url);
+  }
+
+  async function chooseFile(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setError("");
+    setMessage("");
+    setFileName(file.name);
+
+    try {
+      const raw = await file.text();
+      const parsed = parseCsv(raw);
+      if (parsed.length < 2) throw new Error("The CSV needs a header row and at least one drill.");
+      const headers = parsed[0].map((value) => value.replace(/^\uFEFF/, "").trim());
+      const missing = templateHeaders.filter((header) => !headers.includes(header));
+      if (missing.length) throw new Error(`Missing columns: ${missing.join(", ")}.`);
+
+      const rows = parsed.slice(1).map((values) => {
+        const object = Object.fromEntries(headers.map((header, index) => [header, values[index] ?? ""])) as PreviewRow;
+        return object;
+      }).filter((row) => row["Drill Name"].trim());
+
+      setPreview(rows);
+    } catch (err) {
+      setPreview([]);
+      setError(err instanceof Error ? err.message : "Could not read that CSV file.");
+    }
+  }
+
+  async function importLibrary() {
+    if (!preview.length || duplicatePreview.length) return;
+    if (mode === "replace" && !confirm("Replace the current custom drill library with this uploaded list? Saved practice plans will keep their existing drill names.")) return;
+
+    setBusy(true);
+    setError("");
+    setMessage("");
+    try {
+      const response = await authenticatedFetch("/api/trainer/drills", {
+        method: "POST",
+        body: JSON.stringify({ action: "import", mode, rows: preview }),
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error ?? "Could not import drill library.");
+      setPreview([]);
+      setFileName("");
+      if (fileRef.current) fileRef.current.value = "";
+      await loadLibrary();
+      setMessage(`Drill library updated. ${payload.drills?.length ?? 0} drills are now active.`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not import drill library.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function resetToDefault() {
+    if (!confirm("Reset to the built-in starter library? This removes your custom uploaded library. Existing saved practice plans are not changed.")) return;
+    setBusy(true);
+    setError("");
+    try {
+      const response = await authenticatedFetch("/api/trainer/drills", {
+        method: "POST",
+        body: JSON.stringify({ action: "reset" }),
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error ?? "Could not reset drill library.");
+      await loadLibrary();
+      setMessage("Custom library removed. The built-in starter library is active again.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not reset drill library.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <main className="players-shell">
+      <header className="players-header">
+        <div>
+          <Link className="back-link" href="/trainer/players">← Trainer</Link>
+          <p className="eyebrow">MASTER DRILL LIBRARY</p>
+          <h1>Drills</h1>
+          <p className="support-copy">Keep one official record per drill, use aliases for alternate names, and organize the same library used by individual, group, and camp workout builders.</p>
+        </div>
+        <span className="step-chip">{source === "custom" ? "Your custom library" : "Starter library"}</span>
+      </header>
+
+      {error && <p className="auth-error">{error}</p>}
+      {message && <p className="support-copy">{message}</p>}
+
+      <section className="session-card">
+        <div className="section-heading">
+          <div><span className="section-kicker">MANAGE LIBRARY</span><h2>Upload your cleaned drill list</h2></div>
+          <span className="speed-chip">CSV</span>
+        </div>
+        <p className="support-copy">Download the template, rebuild your list in Excel or Google Sheets, then upload it here. Use one official drill name and put duplicate wording in the Aliases column.</p>
+        <div className="profile-actions">
+          <button type="button" className="ghost-button" onClick={downloadTemplate}>Download CSV Template</button>
+          <button type="button" className="primary-button" onClick={() => fileRef.current?.click()}>Upload Drill List</button>
+          {source === "custom" && <button type="button" className="danger-text-button" onClick={resetToDefault} disabled={busy}>Reset to Starter Library</button>}
+        </div>
+        <input ref={fileRef} hidden type="file" accept=".csv,text/csv" onChange={chooseFile} />
+
+        {preview.length > 0 && (
+          <div className="evaluation-card">
+            <div className="section-heading">
+              <div><span className="section-kicker">UPLOAD PREVIEW</span><h2>{fileName}</h2></div>
+              <span className="speed-chip">{preview.length} drills</span>
+            </div>
+            <div className="player-create-grid">
+              <label>Import behavior
+                <select value={mode} onChange={(event) => setMode(event.target.value as "replace" | "add")}>
+                  <option value="replace">Replace current custom library</option>
+                  <option value="add">Add / update these drills</option>
+                </select>
+              </label>
+            </div>
+            {duplicatePreview.length > 0 && (
+              <p className="auth-error">Duplicate official names found: {duplicatePreview.map((names) => names.join(" / ")).join("; ")}. Combine each duplicate into one row and move alternate wording into Aliases.</p>
+            )}
+            <div className="profile-content-grid">
+              {preview.slice(0, 12).map((row, index) => (
+                <article className="session-card" key={`${row["Drill Name"]}-${index}`}>
+                  <span className="section-kicker">{row["Primary Category"] || "Missing category"}</span>
+                  <h3>{row["Drill Name"]}</h3>
+                  {row.Subcategory && <p className="support-copy">{row.Subcategory}</p>}
+                  {row["Alternate Names / Aliases"] && <p className="support-copy">Aliases: {row["Alternate Names / Aliases"]}</p>}
+                </article>
+              ))}
+            </div>
+            {preview.length > 12 && <p className="support-copy">Previewing 12 of {preview.length} rows.</p>}
+            <button className="primary-button" type="button" onClick={importLibrary} disabled={busy || duplicatePreview.length > 0}>{busy ? "Importing…" : mode === "replace" ? "Replace Library" : "Add to Library"}</button>
+          </div>
+        )}
+      </section>
+
+      <section className="session-card">
+        <div className="player-create-grid">
+          <label>Search<input value={q} onChange={(event) => setQ(event.target.value)} placeholder="Search names, aliases, notes..." /></label>
+          <label>Category<select value={category} onChange={(event) => setCategory(event.target.value)}><option>All</option>{categories.map((item) => <option key={item}>{item}</option>)}</select></label>
+          <label><span>Filters</span><button type="button" className={measurable ? "primary-button" : "ghost-button"} onClick={() => setMeasurable((value) => !value)}>Measurable only</button></label>
+        </div>
+        <p className="support-copy">Showing {filtered.length} of {items.length} drills</p>
+      </section>
+
+      <section className="profile-content-grid">
+        {filtered.map((drill) => (
+          <article className="session-card" key={drill.id ?? drill.name}>
+            <span className="section-kicker">{drill.primaryCategory}</span>
+            <h2>{drill.name}</h2>
+            {drill.subcategory && <p className="support-copy">{drill.subcategory}</p>}
+            <div className="coach-tags">{drill.tags.map((tag) => <span className="coach-tag" key={tag}>{tag}</span>)}</div>
+            {(drill.aliases?.length ?? 0) > 0 && <p className="support-copy">Also searchable as: {drill.aliases?.join(" · ")}</p>}
+            {drill.measurable && <p className="support-copy">Measurement: {drill.measurementType?.replaceAll("-", " / ")}</p>}
+            {(drill.variations?.length ?? 0) > 0 && <p className="support-copy">Variations: {drill.variations?.join(" · ")}</p>}
+            {drill.notes && <p className="support-copy">{drill.notes}</p>}
+          </article>
+        ))}
+      </section>
+    </main>
+  );
+}

@@ -1,6 +1,6 @@
 export type DrillCategory = "Ball Handling"|"Shooting"|"Finishing"|"Defense"|"Footwork"|"Speed & Agility"|"Passing"|"Rebounding"|"Decision-Making / Live Play"|"Transition / Team"|"Conditioning"|"Warm-Up / Movement Prep"|"Strength / Athletic Development"|"Competition / Games";
 export type MeasurementType = "makes-attempts"|"time"|"reps"|"distance"|"percentage"|"none";
-export type DrillDefinition={name:string;primaryCategory:DrillCategory;tags:DrillCategory[];measurable?:boolean;measurementType?:MeasurementType;variations?:string[]};
+export type DrillDefinition={id?:string;name:string;primaryCategory:DrillCategory;subcategory?:string|null;aliases?:string[];tags:DrillCategory[];measurable?:boolean;measurementType?:MeasurementType;variations?:string[];notes?:string|null;isDefault?:boolean};
 const d=(name:string,primaryCategory:DrillCategory,tags:DrillCategory[]=[primaryCategory],measurable=false,measurementType:MeasurementType="none",variations:string[]=[]):DrillDefinition=>({name,primaryCategory,tags:[...new Set(tags)],measurable,measurementType,variations});
 const names=(category:DrillCategory, values:string[])=>values.map(name=>d(name,category));
 export const shootingLocations=["Right Corner","Right Short Corner","Right Wing","Right Elbow","Top / Top of Key","Left Elbow","Left Wing","Left Short Corner","Left Corner","Baseline","Free-Throw Line"];

@@ -304,3 +304,12 @@ Product decision:
 Implementation branch: `feat/group-camp-practice-plans`.
 
 Do not mark the roadmap item complete until CI/deployment and a production save -> reopen/edit -> Print/Save PDF acceptance check pass.
+
+
+## Current continuation — 2026-10-19 manageable drill library
+
+Shandon likes the deployed Group/Camps workflow and wants the Drill Library cleaned up before final MVP sign-off. The hard-coded starter library contains duplicate/overlapping terminology and the website had no upload-management flow.
+
+The active branch adds a tenant-scoped Drill model and Library management workflow. The trainer can download a CSV template, rebuild the master list in Excel/Google Sheets, upload and preview it, then Replace Library or Add/Update drills. One official name is stored per drill; alternate names/aliases remain searchable. Name normalization collapses punctuation/case differences, while genuinely different wording should be consolidated by Shandon into the Aliases column. The starter library remains a fallback/reset option. Individual-session and Group/Camp workout builders load the active tenant library through the protected trainer API.
+
+Acceptance after deployment: download template; upload a cleaned CSV; verify duplicate official-name warning; replace library; search a drill by alias; add an uploaded drill to an individual workout; add an uploaded drill to a Group/Camp plan; verify another organization does not inherit the custom library.
