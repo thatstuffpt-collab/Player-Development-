@@ -313,3 +313,19 @@ Shandon likes the deployed Group/Camps workflow and wants the Drill Library clea
 The active branch adds a tenant-scoped Drill model and Library management workflow. The trainer can download a CSV template, rebuild the master list in Excel/Google Sheets, upload and preview it, then Replace Library or Add/Update drills. One official name is stored per drill; alternate names/aliases remain searchable. Name normalization collapses punctuation/case differences, while genuinely different wording should be consolidated by Shandon into the Aliases column. The starter library remains a fallback/reset option. Individual-session and Group/Camp workout builders load the active tenant library through the protected trainer API.
 
 Acceptance after deployment: download template; upload a cleaned CSV; verify duplicate official-name warning; replace library; search a drill by alias; add an uploaded drill to an individual workout; add an uploaded drill to a Group/Camp plan; verify another organization does not inherit the custom library.
+
+
+## Current continuation — 2026-10-24 Excel drill template
+
+Production testing of the managed Drill Library showed that the CSV template opens as raw text on Shandon's Mac, which makes the workflow unnecessarily technical.
+
+The active change replaces the primary template with a real .xlsx workbook designed for Numbers/Excel. The coach-facing columns are intentionally simplified to:
+- Drill Name (required)
+- Category (required; dropdown uses the app's current drill categories)
+- What It Works On
+- Alternate Names
+- Notes
+
+The workbook also contains a Categories worksheet. The app accepts the edited .xlsx back for preview/import, while retaining CSV compatibility for older files. The import API maps the simplified column names onto the existing Drill model, so no database migration is required.
+
+Acceptance after deployment: download template on Mac -> confirm it opens as columns in Numbers/Excel -> verify Category dropdown -> edit/add rows -> upload .xlsx -> preview -> import -> confirm search and workout builders use the imported drills.
