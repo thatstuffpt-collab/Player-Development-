@@ -53,7 +53,7 @@ type ImportedDrill = {
 
 function parseRow(raw: Record<string, unknown>, index: number): ImportedDrill {
   const name = text(raw.name ?? raw.drillName ?? raw["Drill Name"]);
-  const primaryCategory = text(raw.primaryCategory ?? raw["Primary Category"]);
+  const primaryCategory = text(raw.primaryCategory ?? raw["Primary Category"] ?? raw.Category);
   const measurable = parseBoolean(raw.measurable ?? raw["Measurable?"]);
   const measurementType = text(raw.measurementType ?? raw["Measurement Type"]) || "none";
 
@@ -70,8 +70,8 @@ function parseRow(raw: Record<string, unknown>, index: number): ImportedDrill {
     name,
     normalizedName: normalizeName(name),
     primaryCategory,
-    subcategory: optionalText(raw.subcategory ?? raw.Subcategory),
-    aliases: stringList(raw.aliases ?? raw["Alternate Names / Aliases"]),
+    subcategory: optionalText(raw.subcategory ?? raw.Subcategory ?? raw["What It Works On"]),
+    aliases: stringList(raw.aliases ?? raw["Alternate Names / Aliases"] ?? raw["Alternate Names"]),
     tags: [...new Set([primaryCategory, ...tags.filter((tag) => categorySet.has(tag))])],
     measurable,
     measurementType: measurable ? measurementType : "none",
