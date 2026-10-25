@@ -203,3 +203,15 @@ test("drill library template is a real Excel workflow with simple coaching colum
   assert.match(importRoute, /raw\.Category/);
   assert.match(importRoute, /raw\["What It Works On"\]/);
 });
+
+
+test("drill library can be edited directly inside the app", async () => {
+  const page = await readSource("src/app/trainer/drills/page.tsx");
+
+  assert.match(page, /Edit Library in App/);
+  assert.match(page, /\+ Add Drill/);
+  assert.match(page, /Save Library/);
+  assert.match(page, /What It Works On/);
+  assert.match(page, /Alternate Names/);
+  assert.match(page, /mode: "replace"/);
+});
