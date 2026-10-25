@@ -75,6 +75,8 @@ export default function DrillLibraryPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const [editingLibrary, setEditingLibrary] = useState(false);
+  const [editRows, setEditRows] = useState<PreviewRow[]>([]);
 
   async function loadLibrary() {
     const response = await authenticatedFetch("/api/trainer/drills");
@@ -127,6 +129,77 @@ export default function DrillLibraryPage() {
     }
     return [...groups.values()].filter((names) => names.length > 1);
   }, [preview]);
+
+
+  function startEditingLibrary() {
+    setEditRows(items.map((drill) => ({
+      "Drill Name": drill.name,
+      Category: drill.primaryCategory,
+      "What It Works On": drill.subcategory ?? "",
+      "Alternate Names": (drill.aliases ?? []).join("; "),
+      Notes: drill.notes ?? "",
+    })));
+    setEditingLibrary(true);
+    setError("");
+    setMessage("");
+  }
+
+  function updateEditRow(index: number, key: keyof PreviewRow, value: string) {
+    setEditRows((current) => current.map((row, rowIndex) => rowIndex === index ? { ...row, [key]: value } : row));
+  }
+
+  function addEditRow() {
+    setEditRows((current) => [...current, {
+      "Drill Name": "",
+      Category: categories[0] ?? "Ball Handling",
+      "What It Works On": "",
+      "Alternate Names": "",
+      Notes: "",
+    }]);
+  }
+
+  function removeEditRow(index: number) {
+    setEditRows((current) => current.filter((_, rowIndex) => rowIndex !== index));
+  }
+
+  async function saveEditedLibrary() {
+    const rows = editRows.filter((row) => row["Drill Name"].trim());
+    if (!rows.length) {
+      setError("Add at least one drill before saving.");
+      return;
+    }
+
+    const duplicateGroups = new Map<string, string[]>();
+    for (const row of rows) {
+      const key = normalize(row["Drill Name"]);
+      duplicateGroups.set(key, [...(duplicateGroups.get(key) ?? []), row["Drill Name"]]);
+    }
+    const duplicates = [...duplicateGroups.values()].filter((names) => names.length > 1);
+    if (duplicates.length) {
+      setError(`Duplicate drill names found: ${duplicates.map((names) => names.join(" / ")).join("; ")}. Keep one official row and move other wording into Alternate Names.`);
+      return;
+    }
+
+    setBusy(true);
+    setError("");
+    setMessage("");
+    try {
+      const response = await authenticatedFetch("/api/trainer/drills", {
+        method: "POST",
+        body: JSON.stringify({ action: "import", mode: "replace", rows }),
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error ?? "Could not save the drill library.");
+      setEditingLibrary(false);
+      setEditRows([]);
+      await loadLibrary();
+      setMessage(`Library saved. ${payload.drills?.length ?? rows.length} drills are active.`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not save the drill library.");
+    } finally {
+      setBusy(false);
+    }
+  }
 
   async function downloadTemplate() {
     setError("");
@@ -259,10 +332,57 @@ export default function DrillLibraryPage() {
 
       <section className="session-card">
         <div className="section-heading">
-          <div><span className="section-kicker">MANAGE LIBRARY</span><h2>Simple drill spreadsheet</h2></div>
-          <span className="speed-chip">Excel / Numbers</span>
+          <div><span className="section-kicker">MANAGE LIBRARY</span><h2>Edit your drill library here</h2></div>
+          <span className="speed-chip">In-app editor</span>
         </div>
-        <p className="support-copy">The template now opens as a real spreadsheet. Each row is one drill. You only need a drill name and category; the other columns help keep similar drills organized.</p>
+        <p className="support-copy">The fastest option is to manage the library directly inside the app. Each row is one drill: type the official name, choose a category, add what it works on, and save. Spreadsheet upload is still available if you already have a list in Google Sheets, Numbers, or Excel.</p>
+
+        <div className="profile-actions">
+          <button type="button" className="primary-button" onClick={editingLibrary ? () => setEditingLibrary(false) : startEditingLibrary}>{editingLibrary ? "Close Editor" : "Edit Library in App"}</button>
+          <button type="button" className="ghost-button" onClick={() => fileRef.current?.click()}>Upload Spreadsheet</button>
+          <button type="button" className="ghost-button" onClick={downloadTemplate}>Download Optional Template (.xlsx)</button>
+          {source === "custom" && <button type="button" className="danger-text-button" onClick={resetToDefault} disabled={busy}>Reset to Starter Library</button>}
+        </div>
+        <input ref={fileRef} hidden type="file" accept=".xlsx,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv" onChange={chooseFile} />
+
+        {editingLibrary && (
+          <div className="drill-editor">
+            <div className="drill-editor-toolbar">
+              <div>
+                <span className="section-kicker">LIBRARY EDITOR</span>
+                <h3>{editRows.length} rows</h3>
+              </div>
+              <div className="profile-actions">
+                <button type="button" className="ghost-button" onClick={addEditRow}>+ Add Drill</button>
+                <button type="button" className="primary-button" onClick={saveEditedLibrary} disabled={busy}>{busy ? "Saving…" : "Save Library"}</button>
+              </div>
+            </div>
+            <div className="drill-editor-head" aria-hidden="true">
+              <span>Drill Name</span>
+              <span>Category</span>
+              <span>What It Works On</span>
+              <span>Alternate Names</span>
+              <span>Notes</span>
+              <span></span>
+            </div>
+            <div className="drill-editor-rows">
+              {editRows.map((row, index) => (
+                <div className="drill-editor-row" key={`${index}-${row["Drill Name"]}`}>
+                  <label><span>Drill Name</span><input value={row["Drill Name"]} onChange={(event) => updateEditRow(index, "Drill Name", event.target.value)} placeholder="Cross-Step Punch" /></label>
+                  <label><span>Category</span><select value={row.Category} onChange={(event) => updateEditRow(index, "Category", event.target.value)}>{categories.map((item) => <option key={item}>{item}</option>)}</select></label>
+                  <label><span>What It Works On</span><input value={row["What It Works On"]} onChange={(event) => updateEditRow(index, "What It Works On", event.target.value)} placeholder="Change of direction" /></label>
+                  <label><span>Alternate Names</span><input value={row["Alternate Names"]} onChange={(event) => updateEditRow(index, "Alternate Names", event.target.value)} placeholder="Separate with ;" /></label>
+                  <label><span>Notes</span><input value={row.Notes} onChange={(event) => updateEditRow(index, "Notes", event.target.value)} placeholder="Optional coaching note" /></label>
+                  <button type="button" className="danger-text-button" onClick={() => removeEditRow(index)}>Remove</button>
+                </div>
+              ))}
+            </div>
+            <div className="drill-editor-footer">
+              <button type="button" className="ghost-button" onClick={addEditRow}>+ Add Another Drill</button>
+              <button type="button" className="primary-button" onClick={saveEditedLibrary} disabled={busy}>{busy ? "Saving…" : "Save Library"}</button>
+            </div>
+          </div>
+        )}
 
         <div className="profile-content-grid">
           <article className="session-card">
@@ -287,12 +407,6 @@ export default function DrillLibraryPage() {
           </article>
         </div>
 
-        <div className="profile-actions">
-          <button type="button" className="ghost-button" onClick={downloadTemplate}>Download Spreadsheet Template (.xlsx)</button>
-          <button type="button" className="primary-button" onClick={() => fileRef.current?.click()}>Upload Drill Spreadsheet</button>
-          {source === "custom" && <button type="button" className="danger-text-button" onClick={resetToDefault} disabled={busy}>Reset to Starter Library</button>}
-        </div>
-        <input ref={fileRef} hidden type="file" accept=".xlsx,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv" onChange={chooseFile} />
 
         <div className="evaluation-card">
           <div className="section-heading"><div><span className="section-kicker">APP CATEGORIES</span><h3>Category choices in the spreadsheet</h3></div></div>
