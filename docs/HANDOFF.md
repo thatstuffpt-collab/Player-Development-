@@ -329,3 +329,21 @@ The active change replaces the primary template with a real .xlsx workbook desig
 The workbook also contains a Categories worksheet. The app accepts the edited .xlsx back for preview/import, while retaining CSV compatibility for older files. The import API maps the simplified column names onto the existing Drill model, so no database migration is required.
 
 Acceptance after deployment: download template on Mac -> confirm it opens as columns in Numbers/Excel -> verify Category dropdown -> edit/add rows -> upload .xlsx -> preview -> import -> confirm search and workout builders use the imported drills.
+
+
+## Current continuation — 2026-10-25 in-app drill editor
+
+Shandon clarified that spreadsheet download/upload should be optional rather than the primary Drill Library workflow.
+
+The active PR now adds an in-app library editor:
+- open **Edit Library in App** from the Library page;
+- one row per drill;
+- type Drill Name;
+- choose Category from the app's current category dropdown;
+- enter What It Works On;
+- enter Alternate Names;
+- enter optional Notes;
+- add/remove rows quickly;
+- save the whole organization library from inside the app.
+
+Spreadsheet import remains supported for trainers bringing a list from Google Sheets, Numbers, or Excel, and the optional .xlsx template remains available. The product goal is that a trainer can build and maintain the library without ever downloading a file.
