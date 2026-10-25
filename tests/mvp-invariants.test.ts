@@ -179,10 +179,10 @@ test("managed drill library is tenant-scoped and supports CSV replacement plus a
   assert.match(api, /tenantId: user\.tenantId/);
   assert.match(api, /mode === "replace"/);
   assert.match(api, /tenantId_normalizedName/);
-  assert.match(page, /Download Spreadsheet Template/);
-  assert.match(page, /Upload Drill Spreadsheet/);
-  assert.match(page, /Alternate Names \/ Aliases/);
-  assert.match(page, /Replace Library/);
+  assert.match(page, /Download Optional Template/);
+  assert.match(page, /Upload Spreadsheet/);
+  assert.match(page, /Alternate Names/);
+  assert.match(page, /Edit Library in App/);
   assert.match(individual, /authenticatedFetch\("\/api\/trainer\/drills"\)/);
   assert.match(groupCamp, /authenticatedFetch\("\/api\/trainer\/drills"\)/);
 });
