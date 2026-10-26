@@ -179,10 +179,39 @@ test("managed drill library is tenant-scoped and supports CSV replacement plus a
   assert.match(api, /tenantId: user\.tenantId/);
   assert.match(api, /mode === "replace"/);
   assert.match(api, /tenantId_normalizedName/);
-  assert.match(page, /Download CSV Template/);
-  assert.match(page, /Upload Drill List/);
-  assert.match(page, /Alternate Names \/ Aliases/);
-  assert.match(page, /Replace Library/);
+  assert.match(page, /Download Optional Template/);
+  assert.match(page, /Upload Spreadsheet/);
+  assert.match(page, /Alternate Names/);
+  assert.match(page, /Edit Library in App/);
   assert.match(individual, /authenticatedFetch\("\/api\/trainer\/drills"\)/);
   assert.match(groupCamp, /authenticatedFetch\("\/api\/trainer\/drills"\)/);
+});
+
+
+test("drill library template is a real Excel workflow with simple coaching columns", async () => {
+  const page = await readSource("src/app/trainer/drills/page.tsx");
+  const templateRoute = await readSource("src/app/api/trainer/drills/template/route.ts");
+  const previewRoute = await readSource("src/app/api/trainer/drills/preview/route.ts");
+  const importRoute = await readSource("src/app/api/trainer/drills/route.ts");
+
+  assert.match(page, /Download Optional Template \(\.xlsx\)/);
+  assert.match(page, /Drill Name/);
+  assert.match(page, /What It Works On/);
+  assert.match(page, /Alternate Names/);
+  assert.match(templateRoute, /application\/vnd\.openxmlformats-officedocument\.spreadsheetml\.sheet/);
+  assert.match(previewRoute, /parseDrillTemplateXlsx/);
+  assert.match(importRoute, /raw\.Category/);
+  assert.match(importRoute, /raw\["What It Works On"\]/);
+});
+
+
+test("drill library can be edited directly inside the app", async () => {
+  const page = await readSource("src/app/trainer/drills/page.tsx");
+
+  assert.match(page, /Edit Library in App/);
+  assert.match(page, /\+ Add Drill/);
+  assert.match(page, /Save Library/);
+  assert.match(page, /What It Works On/);
+  assert.match(page, /Alternate Names/);
+  assert.match(page, /mode: "replace"/);
 });
