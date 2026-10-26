@@ -194,7 +194,7 @@ test("drill library template is a real Excel workflow with simple coaching colum
   const previewRoute = await readSource("src/app/api/trainer/drills/preview/route.ts");
   const importRoute = await readSource("src/app/api/trainer/drills/route.ts");
 
-  assert.match(page, /Download Spreadsheet Template \(\.xlsx\)/);
+  assert.match(page, /Download Optional Template \(\.xlsx\)/);
   assert.match(page, /Drill Name/);
   assert.match(page, /What It Works On/);
   assert.match(page, /Alternate Names/);
