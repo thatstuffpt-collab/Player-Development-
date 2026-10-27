@@ -102,12 +102,15 @@ export async function GET(request: Request) {
   try {
     const user = await requireAppUser(request, ["TRAINER", "ADMIN"]);
     const prisma = getPrisma();
-    const drills = await prisma.drill.findMany({
-      where: { tenantId: user.tenantId, isActive: true },
-      orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
-    });
+    const [drills, tenantDrillCount] = await Promise.all([
+      prisma.drill.findMany({
+        where: { tenantId: user.tenantId, isActive: true },
+        orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+      }),
+      prisma.drill.count({ where: { tenantId: user.tenantId } }),
+    ]);
 
-    if (!drills.length) {
+    if (!drills.length && tenantDrillCount === 0) {
       return NextResponse.json({ drills: defaultResponse(), source: "default", categories: drillCategories });
     }
 
@@ -133,6 +136,61 @@ export async function POST(request: Request) {
       const prisma = getPrisma();
       await prisma.drill.deleteMany({ where: { tenantId: user.tenantId } });
       return NextResponse.json({ ok: true, drills: defaultResponse(), source: "default" });
+    }
+
+    if (action === "delete") {
+      const prisma = getPrisma();
+      const id = text(body.id);
+      if (!id) return NextResponse.json({ error: "Drill id is required." }, { status: 400 });
+
+      if (id.startsWith("default-")) {
+        const defaultIndex = Number(id.slice("default-".length));
+        if (!Number.isInteger(defaultIndex) || defaultIndex < 0 || defaultIndex >= defaultDrillLibrary.length) {
+          return NextResponse.json({ error: "That starter drill could not be found." }, { status: 404 });
+        }
+
+        await prisma.$transaction(async (tx) => {
+          await tx.drill.deleteMany({ where: { tenantId: user.tenantId } });
+
+          for (const [index, drill] of defaultDrillLibrary.entries()) {
+            if (index === defaultIndex) continue;
+            await tx.drill.create({
+              data: {
+                tenantId: user.tenantId,
+                name: drill.name,
+                normalizedName: normalizeName(drill.name),
+                primaryCategory: drill.primaryCategory,
+                subcategory: null,
+                aliases: [],
+                tags: drill.tags,
+                measurable: drill.measurable ?? false,
+                measurementType: drill.measurable ? (drill.measurementType ?? "none") : "none",
+                variations: drill.variations ?? [],
+                notes: null,
+                sortOrder: index,
+                isActive: true,
+              },
+            });
+          }
+        });
+      } else {
+        const result = await prisma.drill.updateMany({
+          where: { id, tenantId: user.tenantId },
+          data: { isActive: false },
+        });
+        if (!result.count) return NextResponse.json({ error: "That drill could not be found." }, { status: 404 });
+      }
+
+      const drills = await prisma.drill.findMany({
+        where: { tenantId: user.tenantId, isActive: true },
+        orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+      });
+
+      return NextResponse.json({
+        ok: true,
+        drills: drills.map((drill) => ({ ...drill, isDefault: false })),
+        source: "custom",
+      });
     }
 
     const mode = text(body.mode || "add").toLowerCase();

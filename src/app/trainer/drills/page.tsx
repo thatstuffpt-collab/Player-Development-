@@ -295,6 +295,29 @@ export default function DrillLibraryPage() {
     }
   }
 
+  async function deleteDrill(drill: DrillRow) {
+    if (!drill.id) return;
+    if (!confirm(`Delete "${drill.name}" from this organization’s drill library? Saved practice plans that already use this drill will not be changed.`)) return;
+
+    setBusy(true);
+    setError("");
+    setMessage("");
+    try {
+      const response = await authenticatedFetch("/api/trainer/drills", {
+        method: "POST",
+        body: JSON.stringify({ action: "delete", id: drill.id }),
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error ?? "Could not delete that drill.");
+      await loadLibrary();
+      setMessage(`"${drill.name}" was deleted from the drill library.`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not delete that drill.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function resetToDefault() {
     if (!confirm("Reset to the built-in starter library? This removes your custom uploaded library. Existing saved practice plans are not changed.")) return;
     setBusy(true);
@@ -367,7 +390,7 @@ export default function DrillLibraryPage() {
             </div>
             <div className="drill-editor-rows">
               {editRows.map((row, index) => (
-                <div className="drill-editor-row" key={`${index}-${row["Drill Name"]}`}>
+                <div className="drill-editor-row" key={index}>
                   <label><span>Drill Name</span><input value={row["Drill Name"]} onChange={(event) => updateEditRow(index, "Drill Name", event.target.value)} placeholder="Cross-Step Punch" /></label>
                   <label><span>Category</span><select value={row.Category} onChange={(event) => updateEditRow(index, "Category", event.target.value)}>{categories.map((item) => <option key={item}>{item}</option>)}</select></label>
                   <label><span>What It Works On</span><input value={row["What It Works On"]} onChange={(event) => updateEditRow(index, "What It Works On", event.target.value)} placeholder="Change of direction" /></label>
@@ -466,6 +489,9 @@ export default function DrillLibraryPage() {
             {drill.measurable && <p className="support-copy">Measurement: {drill.measurementType?.replaceAll("-", " / ")}</p>}
             {(drill.variations?.length ?? 0) > 0 && <p className="support-copy">Variations: {drill.variations?.join(" · ")}</p>}
             {drill.notes && <p className="support-copy">{drill.notes}</p>}
+            <div className="profile-actions">
+              <button type="button" className="danger-text-button" onClick={() => deleteDrill(drill)} disabled={busy}>Delete Drill</button>
+            </div>
           </article>
         ))}
       </section>
