@@ -215,3 +215,17 @@ test("drill library can be edited directly inside the app", async () => {
   assert.match(page, /Alternate Names/);
   assert.match(page, /mode: "replace"/);
 });
+
+
+test("drill cards expose a tenant-scoped delete action", async () => {
+  const page = await readSource("src/app/trainer/drills/page.tsx");
+  const api = await readSource("src/app/api/trainer/drills/route.ts");
+
+  assert.match(page, /Delete Drill/);
+  assert.match(page, /action: "delete"/);
+  assert.match(api, /if \(action === "delete"\)/);
+  assert.match(api, /tenantId: user\.tenantId/);
+  assert.match(api, /id\.startsWith\("default-"\)/);
+  assert.match(api, /isActive: false/);
+  assert.match(api, /tenantDrillCount === 0/);
+});
