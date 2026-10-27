@@ -229,3 +229,11 @@ test("drill cards expose a tenant-scoped delete action", async () => {
   assert.match(api, /isActive: false/);
   assert.match(api, /tenantDrillCount === 0/);
 });
+
+
+test("drill editor keeps stable row keys while typing", async () => {
+  const page = await readSource("src/app/trainer/drills/page.tsx");
+
+  assert.match(page, /className="drill-editor-row" key=\{index\}/);
+  assert.doesNotMatch(page, /key=\{\`\$\{index\}-\$\{row\["Drill Name"\]\}\`\}/);
+});
