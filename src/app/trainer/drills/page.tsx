@@ -390,7 +390,7 @@ export default function DrillLibraryPage() {
             </div>
             <div className="drill-editor-rows">
               {editRows.map((row, index) => (
-                <div className="drill-editor-row" key={`${index}-${row["Drill Name"]}`}>
+                <div className="drill-editor-row" key={index}>
                   <label><span>Drill Name</span><input value={row["Drill Name"]} onChange={(event) => updateEditRow(index, "Drill Name", event.target.value)} placeholder="Cross-Step Punch" /></label>
                   <label><span>Category</span><select value={row.Category} onChange={(event) => updateEditRow(index, "Category", event.target.value)}>{categories.map((item) => <option key={item}>{item}</option>)}</select></label>
                   <label><span>What It Works On</span><input value={row["What It Works On"]} onChange={(event) => updateEditRow(index, "What It Works On", event.target.value)} placeholder="Change of direction" /></label>
