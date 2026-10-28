@@ -18,10 +18,6 @@ export function TrainerMobileMenu() {
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    setOpen(false);
-  }, [pathname]);
-
-  useEffect(() => {
     if (!open) return;
     function onPointerDown(event: PointerEvent) {
       if (!menuRef.current?.contains(event.target as Node)) setOpen(false);
@@ -44,7 +40,12 @@ export function TrainerMobileMenu() {
           {links.map((link) => {
             const active = pathname === link.href || (link.href !== "/trainer/today" && pathname.startsWith(link.href + "/"));
             return (
-              <Link key={link.href} href={link.href} className={active ? "active" : ""}>
+              <Link
+                key={link.href}
+                href={link.href}
+                className={active ? "active" : ""}
+                onClick={() => setOpen(false)}
+              >
                 {link.label}
               </Link>
             );
