@@ -237,3 +237,21 @@ test("drill editor keeps stable row keys while typing", async () => {
   assert.match(page, /className="drill-editor-row" key=\{index\}/);
   assert.doesNotMatch(page, /key=\{\`\$\{index\}-\$\{row\["Drill Name"\]\}\`\}/);
 });
+
+
+test("mobile trainer navigation is collapsible", async () => {
+  const layout = await readSource("src/app/trainer/layout.tsx");
+  const menu = await readSource("src/components/trainer/trainer-mobile-menu.tsx");
+  const css = await readSource("src/app/trainer/players.css");
+
+  assert.match(layout, /TrainerMobileMenu/);
+  assert.doesNotMatch(layout, /trainer-mobile-nav/);
+  assert.match(menu, /aria-expanded=\{open\}/);
+  assert.match(menu, /Today/);
+  assert.match(menu, /Athletes/);
+  assert.match(menu, /Group\/Camps/);
+  assert.match(menu, /Library/);
+  assert.match(menu, /Organization/);
+  assert.match(css, /\.trainer-mobile-menu-panel/);
+  assert.match(css, /position:fixed/);
+});
