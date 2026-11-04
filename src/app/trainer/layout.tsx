@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ReactNode } from "react";
 import { AccountSignOutButton } from "@/components/auth/account-sign-out-button";
 import { TrainerAuthGate } from "@/components/auth/trainer-auth-gate";
+import { TrainerMobileMenu } from "@/components/trainer/trainer-mobile-menu";
 import "./players.css";
 
 export default function TrainerLayout({ children }: { children: ReactNode }) {
@@ -19,13 +20,7 @@ export default function TrainerLayout({ children }: { children: ReactNode }) {
         </div>
       </nav>
       {children}
-      <nav className="trainer-mobile-nav" aria-label="Mobile trainer navigation">
-        <Link href="/trainer/today"><span aria-hidden="true">⌂</span><strong>Today</strong></Link>
-        <Link href="/trainer/players"><span aria-hidden="true">◉</span><strong>Athletes</strong></Link>
-        <Link href="/trainer/groups-camps"><span aria-hidden="true">▤</span><strong>Group/Camps</strong></Link>
-        <Link href="/trainer/drills"><span aria-hidden="true">▦</span><strong>Library</strong></Link>
-        <Link href="/trainer/organization"><span aria-hidden="true">◎</span><strong>Organization</strong></Link>
-      </nav>
+      <TrainerMobileMenu />
     </TrainerAuthGate>
   );
 }
